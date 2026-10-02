@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.StarBorder
@@ -41,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.screens.AiAnalystScreen
 import com.example.ui.screens.ConverterScreen
 import com.example.ui.screens.MarketScreen
 import com.example.ui.screens.SettingsScreen
@@ -59,7 +62,8 @@ import com.example.ui.viewmodel.ExchangeViewModel
 
 enum class MainTab(val titleFa: String, val activeIcon: ImageVector, val inactiveIcon: ImageVector, val tag: String) {
     MARKET("بازار", Icons.Filled.TrendingUp, Icons.Outlined.TrendingUp, "nav_market"),
-    CONVERTER("مبدل هوشمند", Icons.Filled.SwapHoriz, Icons.Outlined.SwapHoriz, "nav_converter"),
+    CONVERTER("مبدل", Icons.Filled.SwapHoriz, Icons.Outlined.SwapHoriz, "nav_converter"),
+    AI_ANALYST("هوش مصنوعی", Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome, "nav_ai_analyst"),
     WATCHLIST("دیده‌بان", Icons.Filled.Star, Icons.Outlined.StarBorder, "nav_watchlist"),
     SETTINGS("تنظیمات", Icons.Filled.Settings, Icons.Outlined.Settings, "nav_settings")
 }
@@ -172,6 +176,12 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                         onSwap = { viewModel.swapConverterItems() },
                         onSelectFrom = { viewModel.setConverterFrom(it) },
                         onSelectTo = { viewModel.setConverterTo(it) }
+                    )
+                }
+
+                MainTab.AI_ANALYST -> {
+                    AiAnalystScreen(
+                        viewModel = viewModel
                     )
                 }
 

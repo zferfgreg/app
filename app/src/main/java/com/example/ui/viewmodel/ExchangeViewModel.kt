@@ -23,6 +23,17 @@ enum class SortOrder(val titleFa: String) {
     PRICE_ASC("کمترین قیمت")
 }
 
+enum class MessageSender {
+    USER, AI
+}
+
+data class AiChatMessage(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val sender: MessageSender,
+    val text: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
 data class FilterParams(
     val selectedCategory: AssetType = AssetType.ALL,
     val searchQuery: String = "",
@@ -55,6 +66,40 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
     val converterFromItem = MutableStateFlow<ExchangeItem?>(null)
     val converterToItem = MutableStateFlow<ExchangeItem?>(null)
     val converterAmount = MutableStateFlow("1")
+
+    // AI Market Analyst State
+    val aiChatMessages = MutableStateFlow<List<AiChatMessage>>(listOf(
+        AiChatMessage(
+            sender = MessageSender.AI,
+            text = "سلام! من دستیار هوش مصنوعی تحلیلی بازار EXCHANCE هستم 🤖\nتمام نرخ‌های زنده دلار، طلا، سکه و کریپتو را به لحظه در اختیار دارم. چه تحلیلی مدنظر شماست؟"
+        )
+    ))
+    val isAiAnalyzing = MutableStateFlow(false)
+
+    fun askAi(prompt: String) {
+        val cleanPrompt = prompt.trim()
+        if (cleanPrompt.isBlank() || isAiAnalyzing.value) return
+        val userMsg = AiChatMessage(sender = MessageSender.USER, text = cleanPrompt)
+        aiChatMessages.update { it + userMsg }
+        isAiAnalyzing.value = true
+
+        viewModelScope.launch {
+            val currentItems = uiState.value.items
+            val response = com.example.data.remote.GeminiService.analyzeMarket(cleanPrompt, currentItems)
+            val aiMsg = AiChatMessage(sender = MessageSender.AI, text = response)
+            aiChatMessages.update { it + aiMsg }
+            isAiAnalyzing.value = false
+        }
+    }
+
+    fun clearAiChat() {
+        aiChatMessages.value = listOf(
+            AiChatMessage(
+                sender = MessageSender.AI,
+                text = "سلام! من دستیار هوش مصنوعی تحلیلی بازار EXCHANCE هستم 🤖\nتمام نرخ‌های زنده دلار، طلا، سکه و کریپتو را به لحظه در اختیار دارم. چه تحلیلی مدنظر شماست؟"
+            )
+        )
+    }
 
     val uiState: StateFlow<MarketUiState> = combine(
         repository.allItems,
