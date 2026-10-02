@@ -9,26 +9,39 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.SwapHoriz
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,7 +49,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +69,7 @@ import com.example.ui.theme.DarkBg
 import com.example.ui.theme.FintechCyan
 import com.example.ui.theme.FintechGold
 import com.example.ui.theme.FintechGreen
+import com.example.ui.theme.FintechPurple
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.SurfaceCard
 import com.example.ui.theme.SurfaceCardBorder
@@ -61,7 +79,7 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.viewmodel.ExchangeViewModel
 
 enum class MainTab(val titleFa: String, val activeIcon: ImageVector, val inactiveIcon: ImageVector, val tag: String) {
-    MARKET("بازار", Icons.Filled.TrendingUp, Icons.Outlined.TrendingUp, "nav_market"),
+    MARKET("بازار", Icons.AutoMirrored.Filled.TrendingUp, Icons.AutoMirrored.Outlined.TrendingUp, "nav_market"),
     CONVERTER("مبدل", Icons.Filled.SwapHoriz, Icons.Outlined.SwapHoriz, "nav_converter"),
     AI_ANALYST("هوش مصنوعی", Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome, "nav_ai_analyst"),
     WATCHLIST("دیده‌بان", Icons.Filled.Star, Icons.Outlined.StarBorder, "nav_watchlist"),
@@ -104,40 +122,78 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
             .background(DarkBg),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            NavigationBar(
-                containerColor = SurfaceCard,
-                tonalElevation = 8.dp,
-                modifier = Modifier.testTag("main_bottom_nav")
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
-                MainTab.values().forEach { tab ->
-                    val isSelected = currentTab == tab
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = { currentTab = tab },
-                        icon = {
-                            Icon(
-                                imageVector = if (isSelected) tab.activeIcon else tab.inactiveIcon,
-                                contentDescription = tab.titleFa
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(26.dp))
+                        .border(1.dp, SurfaceCardBorder, RoundedCornerShape(26.dp))
+                        .testTag("main_bottom_nav"),
+                    color = SurfaceCard.copy(alpha = 0.95f),
+                    tonalElevation = 8.dp,
+                    shadowElevation = 14.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 6.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        MainTab.values().forEach { tab ->
+                            val isSelected = currentTab == tab
+                            val activeColor = when (tab) {
+                                MainTab.AI_ANALYST -> FintechPurple
+                                MainTab.WATCHLIST -> FintechGold
+                                else -> FintechCyan
+                            }
+
+                            val animatedScale by animateFloatAsState(
+                                targetValue = if (isSelected) 1.08f else 1.0f,
+                                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                label = "tab_scale"
                             )
-                        },
-                        label = {
-                            Text(
-                                text = tab.titleFa,
-                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 11.sp
-                                )
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = if (tab == MainTab.WATCHLIST) FintechGold else FintechCyan,
-                            selectedTextColor = TextPrimary,
-                            indicatorColor = SurfaceCardLight,
-                            unselectedIconColor = TextMuted,
-                            unselectedTextColor = TextMuted
-                        ),
-                        modifier = Modifier.testTag(tab.tag)
-                    )
+
+                            Box(
+                                modifier = Modifier
+                                    .scale(animatedScale)
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .background(
+                                        if (isSelected) activeColor.copy(alpha = 0.16f) else Color.Transparent
+                                    )
+                                    .clickable { currentTab = tab }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                                    .testTag(tab.tag),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (isSelected) tab.activeIcon else tab.inactiveIcon,
+                                        contentDescription = tab.titleFa,
+                                        tint = if (isSelected) activeColor else TextMuted,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(3.dp))
+                                    Text(
+                                        text = tab.titleFa,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium,
+                                            fontSize = 10.5.sp
+                                        ),
+                                        color = if (isSelected) TextPrimary else TextMuted
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

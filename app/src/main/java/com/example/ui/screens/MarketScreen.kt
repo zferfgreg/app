@@ -63,6 +63,8 @@ import com.example.ui.theme.FintechCyan
 import com.example.ui.theme.FintechGold
 import com.example.ui.theme.FintechGreen
 import com.example.ui.theme.FintechGreenBg
+import com.example.ui.theme.FintechRed
+import com.example.ui.theme.FintechRedBg
 import com.example.ui.theme.SurfaceCard
 import com.example.ui.theme.SurfaceCardBorder
 import com.example.ui.theme.SurfaceCardLight
@@ -71,6 +73,7 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.viewmodel.MarketUiState
 import com.example.ui.viewmodel.SortOrder
+import com.example.util.Formatters
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,6 +110,106 @@ fun MarketScreen(
                     isRefreshing = uiState.isRefreshing,
                     onRefresh = onRefresh
                 )
+            }
+
+            // Live Market Pulse Strip (نبض زنده بازار)
+            if (uiState.items.isNotEmpty()) {
+                item {
+                    Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "⚡ نبض لحظه‌ای بازار",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = FintechGold
+                            )
+                            Text(
+                                text = "برای مشاهده نمودار ضربه بزنید",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = TextMuted
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        val topMovers = remember(uiState.items) {
+                            val movers = mutableListOf<ExchangeItem>()
+                            uiState.items.find { it.id == "USD" }?.let { movers.add(it) }
+                            uiState.items.find { it.id == "GOLD_18K" }?.let { movers.add(it) }
+                            uiState.items.find { it.id == "SEKKE_EMAMI" }?.let { movers.add(it) }
+                            uiState.items.find { it.id == "BTC" }?.let { movers.add(it) }
+                            uiState.items.find { it.id == "USDT" }?.let { movers.add(it) }
+                            uiState.items.find { it.id == "ETH" }?.let { movers.add(it) }
+                            movers
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            topMovers.forEach { mover ->
+                                val isPos = mover.changePercent24h >= 0
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(SurfaceCard)
+                                        .border(
+                                            1.dp,
+                                            if (isPos) FintechGreen.copy(alpha = 0.35f) else FintechRed.copy(alpha = 0.35f),
+                                            RoundedCornerShape(14.dp)
+                                        )
+                                        .clickable { onItemClick(mover) }
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = mover.nameFa,
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 11.5.sp
+                                                ),
+                                                color = TextPrimary
+                                            )
+                                            Text(
+                                                text = Formatters.formatToman(mover.priceToman),
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontSize = 10.5.sp,
+                                                    fontWeight = FontWeight.SemiBold
+                                                ),
+                                                color = TextSecondary
+                                            )
+                                        }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(if (isPos) FintechGreenBg else FintechRedBg)
+                                                .padding(horizontal = 5.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = Formatters.formatPercent(mover.changePercent24h),
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.ExtraBold
+                                                ),
+                                                color = if (isPos) FintechGreen else FintechRed
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // Search Bar & Sort Dropdown Row
@@ -312,7 +415,11 @@ fun MarketScreen(
             }
 
             // Exchange Items List
-            items(uiState.filteredItems, key = { it.id }) { item ->
+            items(
+                items = uiState.filteredItems,
+                key = { it.id },
+                contentType = { "exchange_item" }
+            ) { item ->
                 ExchangeItemCard(
                     item = item,
                     onClick = { onItemClick(item) },

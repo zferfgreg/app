@@ -1,8 +1,8 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.unit.dp
 import com.example.ui.theme.FintechGreen
 import com.example.ui.theme.FintechGreenBg
 import com.example.ui.theme.FintechRed
@@ -22,7 +21,7 @@ fun SparklineChart(
     isPositive: Boolean,
     modifier: Modifier = Modifier,
     showGradient: Boolean = true,
-    strokeWidth: Float = 4f
+    strokeWidth: Float = 3.5f
 ) {
     val lineColor = if (isPositive) FintechGreen else FintechRed
     val gradientColor = if (isPositive) FintechGreenBg else FintechRedBg
@@ -40,11 +39,12 @@ fun SparklineChart(
 
         val path = Path()
         val fillPath = Path()
+        var lastX = 0f
+        var lastY = 0f
 
         for (i in points.indices) {
             val normY = ((points[i] - minVal) / range).toFloat()
-            // Invert Y so highest price is at top (y=0)
-            val y = h - (normY * (h * 0.8f) + (h * 0.1f))
+            val y = h - (normY * (h * 0.76f) + (h * 0.12f))
             val x = i * stepX
 
             if (i == 0) {
@@ -54,7 +54,7 @@ fun SparklineChart(
             } else {
                 val prevX = (i - 1) * stepX
                 val prevNormY = ((points[i - 1] - minVal) / range).toFloat()
-                val prevY = h - (prevNormY * (h * 0.8f) + (h * 0.1f))
+                val prevY = h - (prevNormY * (h * 0.76f) + (h * 0.12f))
 
                 val cX1 = prevX + (x - prevX) / 2f
                 val cY1 = prevY
@@ -63,6 +63,11 @@ fun SparklineChart(
 
                 path.cubicTo(cX1, cY1, cX2, cY2, x, y)
                 fillPath.cubicTo(cX1, cY1, cX2, cY2, x, y)
+            }
+
+            if (i == points.size - 1) {
+                lastX = x
+                lastY = y
             }
         }
 
@@ -88,5 +93,19 @@ fun SparklineChart(
                 join = StrokeJoin.Round
             )
         )
+
+        // Subtle glowing dot at the end
+        if (points.isNotEmpty()) {
+            drawCircle(
+                color = lineColor.copy(alpha = 0.35f),
+                radius = strokeWidth * 2.2f,
+                center = androidx.compose.ui.geometry.Offset(lastX, lastY)
+            )
+            drawCircle(
+                color = lineColor,
+                radius = strokeWidth * 1.1f,
+                center = androidx.compose.ui.geometry.Offset(lastX, lastY)
+            )
+        }
     }
 }

@@ -2,26 +2,32 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val DarkBg = Color(0xFF090D16)
-val SurfaceCard = Color(0xFF121929)
-val SurfaceCardLight = Color(0xFF1A243B)
-val SurfaceCardBorder = Color(0xFF24324F)
+val DarkBg = Color(0xFF06090F)
+val DarkBgElevated = Color(0xFF0B101A)
+val SurfaceCard = Color(0xFF0F1726)
+val SurfaceCardLight = Color(0xFF172338)
+val SurfaceCardBorder = Color(0xFF22324D)
+val SurfaceCardHighlight = Color(0xFF2F4468)
 
-val FintechGreen = Color(0xFF10B981)
-val FintechGreenLight = Color(0xFF34D399)
-val FintechGreenBg = Color(0x2210B981)
+val FintechGreen = Color(0xFF00E676)
+val FintechGreenLight = Color(0xFF69F0AE)
+val FintechGreenBg = Color(0x2400E676)
 
-val FintechRed = Color(0xFFF43F5E)
-val FintechRedLight = Color(0xFFFB7185)
-val FintechRedBg = Color(0x22F43F5E)
+val FintechRed = Color(0xFFFF2A55)
+val FintechRedLight = Color(0xFFFF617E)
+val FintechRedBg = Color(0x24FF2A55)
 
-val FintechGold = Color(0xFFF59E0B)
-val FintechGoldLight = Color(0xFFFBBF24)
-val FintechGoldBg = Color(0x22F59E0B)
+val FintechGold = Color(0xFFFFB800)
+val FintechGoldLight = Color(0xFFFFD54F)
+val FintechGoldBg = Color(0x24FFB800)
 
-val FintechCyan = Color(0xFF38BDF8)
+val FintechCyan = Color(0xFF00E5FF)
+val FintechCyanLight = Color(0xFF80F0FF)
+val FintechCyanBg = Color(0x2400E5FF)
+
+val FintechPurple = Color(0xFFB388FF)
 val FintechIndigo = Color(0xFF6366F1)
 
-val TextPrimary = Color(0xFFF8FAFC)
-val TextSecondary = Color(0xFF94A3B8)
-val TextMuted = Color(0xFF64748B)
+val TextPrimary = Color(0xFFF9FAFB)
+val TextSecondary = Color(0xFF9CA3AF)
+val TextMuted = Color(0xFF6B7280)
