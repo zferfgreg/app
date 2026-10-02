@@ -1,0 +1,63 @@
+name: Build & Release EXCHANCE APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant Execute Permission to gradlew
+        run: chmod +x gradlew
+
+      - name: Build Android Debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Prepare Release APK
+        run: |
+          mkdir -p release_assets
+          cp app/build/outputs/apk/debug/app-debug.apk release_assets/EXCHANCE-v1.0.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+        with:
+          name: "EXCHANCE Android App v1.0.0"
+          tag_name: "v1.0.0"
+          draft: false
+          prerelease: false
+          files: release_assets/EXCHANCE-v1.0.apk
+          body: |
+            ## 🚀 انتشار نسخه رسمی اپلیکیشن EXCHANCE (نسخه ۱.۰.۰)
+
+            فایل نصبی اندروید با موفقیت ساخته شد و در بخش Assets این ریلیز قابل دریافت است.
+
+            ### ✨ امکانات برنامه:
+            - 📈 **قیمت لحظه‌ای بازار:** دلار، یورو، درهم، طلا ۱۸ و ۲۴ عیار، انواع سکه بهار آزادی و رمزارزها (بیت‌کوین، تتر، اتریوم و...)
+            - 📊 **نمودارهای تحلیلی سبک Recharts:** بازه‌های ۲۴ ساعته تا ۱ ساله با اسکرابر لمسی و خطوط راهنما
+            - 💱 **مبدل چندطرفه ارزها:** تبدیل زنده تومان، دلار، تتر و ارزهای دیجیتال
+            - 📱 **پشتیبانی تلگرام:** ارتباط مستقیم با پشتیبانی [@ar1an00](https://t.me/ar1an00)
+            
+            ### 📥 دانلود و نصب:
+            فایل **`EXCHANCE-v1.0.apk`** را از پایین همین بخش دانلود کرده و روی گوشی اندرویدی خود نصب نمایید.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
