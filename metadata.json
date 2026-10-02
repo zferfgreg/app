@@ -1,0 +1,6 @@
+{
+  "name": "EXCHANCE",
+  "description": "سامانه نرخ لحظه‌ای دلار، ارزهای فیات، طلا، سکه و ارزهای دیجیتال با مبدل هوشمند ارز و دیده‌بان",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
