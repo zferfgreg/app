@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Blue Background -->
+    <path
+        android:fillColor="#003399"
+        android:pathData="M0,0h48v48h-48z"/>
+    <!-- Ring of Gold Stars -->
+    <path
+        android:fillColor="#FFCC00"
+        android:pathData="M24,10l0.7,1.8h1.8l-1.4,1.1l0.5,1.8l-1.6,-1.1l-1.6,1.1l0.5,-1.8l-1.4,-1.1h1.8z M24,34l0.7,1.8h1.8l-1.4,1.1l0.5,1.8l-1.6,-1.1l-1.6,1.1l0.5,-1.8l-1.4,-1.1h1.8z M12,22l0.7,1.8h1.8l-1.4,1.1l0.5,1.8l-1.6,-1.1l-1.6,1.1l0.5,-1.8l-1.4,-1.1h1.8z M36,22l0.7,1.8h1.8l-1.4,1.1l0.5,1.8l-1.6,-1.1l-1.6,1.1l0.5,-1.8l-1.4,-1.1h1.8z M15.5,13.5l0.7,1.8h1.8l-1.4,1.1l0.5,1.8l-1.6,-1.1l-1.6,1.1l0.5,-1.8l-1.4,-1.1h1.8z M32.5,13.5l0.7,1.8h1.8l-1.4,1.1l0.5,1.8l-1.6,-1.1l-1.6,1.1l0.5,-1.8l-1.4,-1.1h1.8z M15.5,30.5l0.7,1.8h1.8l-1.4,1.1l0.5,1.8l-1.6,-1.1l-1.6,1.1l0.5,-1.8l-1.4,-1.1h1.8z M32.5,30.5l0.7,1.8h1.8l-1.4,1.1l0.5,1.8l-1.6,-1.1l-1.6,1.1l0.5,-1.8l-1.4,-1.1h1.8z"/>
+</vector>

@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -32,12 +34,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.model.AssetType
 import com.example.data.model.ExchangeItem
 import com.example.ui.theme.FintechCyan
@@ -215,45 +220,69 @@ fun ExchangeItemCard(
 
 @Composable
 fun AssetIconBadge(item: ExchangeItem, modifier: Modifier = Modifier) {
-    val (backgroundBrush, symbolText) = when (item.id) {
-        "USD" -> Brush.linearGradient(listOf(FintechGreen, FintechCyan)) to "$"
-        "USDT" -> Brush.linearGradient(listOf(Color(0xFF26A17B), Color(0xFF10B981))) to "₮"
-        "EUR" -> Brush.linearGradient(listOf(Color(0xFF003399), FintechCyan)) to "€"
-        "AED" -> Brush.linearGradient(listOf(FintechIndigo, FintechGold)) to "د.إ"
-        "GBP" -> Brush.linearGradient(listOf(Color(0xFF8B5CF6), Color(0xFFC084FC))) to "£"
-        "CAD" -> Brush.linearGradient(listOf(Color(0xFFEA580C), Color(0xFFF97316))) to "C$"
-        "TRY" -> Brush.linearGradient(listOf(FintechRed, Color(0xFFFB7185))) to "₺"
-        "USD_NIMA" -> Brush.linearGradient(listOf(Color(0xFF0D9488), Color(0xFF14B8A6))) to "نیما"
-        "BTC" -> Brush.linearGradient(listOf(Color(0xFFF7931A), FintechGold)) to "₿"
-        "ETH" -> Brush.linearGradient(listOf(Color(0xFF627EEA), FintechCyan)) to "Ξ"
-        "SOL" -> Brush.linearGradient(listOf(Color(0xFF9945FF), Color(0xFF14F195))) to "◎"
-        "BNB" -> Brush.linearGradient(listOf(Color(0xFFF3BA2F), Color(0xFFE5A118))) to "BNB"
-        "XRP" -> Brush.linearGradient(listOf(Color(0xFF23292F), Color(0xFF00AAE4))) to "✕"
-        "TON" -> Brush.linearGradient(listOf(Color(0xFF0088CC), Color(0xFF55ACEE))) to "💎"
-        "DOGE" -> Brush.linearGradient(listOf(Color(0xFFC2A633), Color(0xFFE1B846))) to "Ð"
-        "ADA" -> Brush.linearGradient(listOf(Color(0xFF0033AD), Color(0xFF3366FF))) to "₳"
-        "TRX" -> Brush.linearGradient(listOf(Color(0xFFEF0027), Color(0xFFFF5252))) to "TRX"
-        "AVAX" -> Brush.linearGradient(listOf(Color(0xFFE84142), Color(0xFFFF7273))) to "▲"
-        "SHIB" -> Brush.linearGradient(listOf(Color(0xFFFFA409), Color(0xFFFF6400))) to "🐕"
-        "GOLD_18K", "GOLD_24K" -> Brush.linearGradient(listOf(FintechGold, Color(0xFFFDE047))) to "⚜"
-        "SEKKE_EMAMI", "SEKKE_BAHAR", "SEKKE_NIM", "SEKKE_ROB", "SEKKE_GERMI" ->
-            Brush.linearGradient(listOf(Color(0xFFD97706), FintechGold)) to "🪙"
-        "OUNCE_GOLD" -> Brush.linearGradient(listOf(FintechGold, Color(0xFFB45309))) to "OZ"
-        else -> Brush.linearGradient(listOf(SurfaceCardLight, SurfaceCardBorder)) to item.symbol.take(2)
+    val flagRes = when (item.id) {
+        "USD" -> R.drawable.flag_us
+        "EUR" -> R.drawable.flag_eu
+        "AED" -> R.drawable.flag_ae
+        "GBP" -> R.drawable.flag_gb
+        "TRY" -> R.drawable.flag_tr
+        "CAD" -> R.drawable.flag_ca
+        "USD_NIMA" -> R.drawable.flag_ir
+        "CHF" -> R.drawable.flag_chf
+        "CNY" -> R.drawable.flag_cny
+        else -> null
     }
 
-    Box(
-        modifier = modifier
-            .size(38.dp)
-            .clip(CircleShape)
-            .background(backgroundBrush),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = symbolText,
-            color = Color.White,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = if (symbolText.length > 2) 10.sp else 15.sp
-        )
+    if (flagRes != null) {
+        Box(
+            modifier = modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .border(1.5.dp, SurfaceCardBorder, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = flagRes),
+                contentDescription = item.nameFa,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    } else {
+        val (backgroundBrush, symbolText) = when (item.id) {
+            "USDT" -> Brush.linearGradient(listOf(Color(0xFF26A17B), Color(0xFF10B981))) to "₮"
+            "BTC" -> Brush.linearGradient(listOf(Color(0xFFF7931A), FintechGold)) to "₿"
+            "ETH" -> Brush.linearGradient(listOf(Color(0xFF627EEA), FintechCyan)) to "Ξ"
+            "SOL" -> Brush.linearGradient(listOf(Color(0xFF9945FF), Color(0xFF14F195))) to "◎"
+            "BNB" -> Brush.linearGradient(listOf(Color(0xFFF3BA2F), Color(0xFFE5A118))) to "BNB"
+            "XRP" -> Brush.linearGradient(listOf(Color(0xFF23292F), Color(0xFF00AAE4))) to "✕"
+            "TON" -> Brush.linearGradient(listOf(Color(0xFF0088CC), Color(0xFF55ACEE))) to "💎"
+            "DOGE" -> Brush.linearGradient(listOf(Color(0xFFC2A633), Color(0xFFE1B846))) to "Ð"
+            "ADA" -> Brush.linearGradient(listOf(Color(0xFF0033AD), Color(0xFF3366FF))) to "₳"
+            "TRX" -> Brush.linearGradient(listOf(Color(0xFFEF0027), Color(0xFFFF5252))) to "TRX"
+            "AVAX" -> Brush.linearGradient(listOf(Color(0xFFE84142), Color(0xFFFF7273))) to "▲"
+            "SHIB" -> Brush.linearGradient(listOf(Color(0xFFFFA409), Color(0xFFFF6400))) to "🐕"
+            "GOLD_18K", "GOLD_24K" -> Brush.linearGradient(listOf(FintechGold, Color(0xFFFDE047))) to "⚜"
+            "SEKKE_EMAMI", "SEKKE_BAHAR", "SEKKE_NIM", "SEKKE_ROB", "SEKKE_GERMI" ->
+                Brush.linearGradient(listOf(Color(0xFFD97706), FintechGold)) to "🪙"
+            "OUNCE_GOLD" -> Brush.linearGradient(listOf(FintechGold, Color(0xFFB45309))) to "OZ"
+            else -> Brush.linearGradient(listOf(SurfaceCardLight, SurfaceCardBorder)) to item.symbol.take(2)
+        }
+
+        Box(
+            modifier = modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .border(1.dp, SurfaceCardBorder, CircleShape)
+                .background(backgroundBrush),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = symbolText,
+                color = Color.White,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = if (symbolText.length > 2) 10.sp else 15.sp
+            )
+        }
     }
 }

@@ -25,8 +25,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -70,6 +72,8 @@ fun MarketHeaderCard(
     items: List<ExchangeItem>,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
+    unreadNotificationsCount: Int = 0,
+    onOpenNotifications: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val usdItem = items.find { it.id == "USD" }
@@ -141,6 +145,43 @@ fun MarketHeaderCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // Smart Notification Button with Badge
+                        Box {
+                            IconButton(
+                                onClick = onOpenNotifications,
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(SurfaceCardLight.copy(alpha = 0.85f))
+                                    .border(1.dp, if (unreadNotificationsCount > 0) FintechGold else SurfaceCardBorder, CircleShape)
+                                    .testTag("notification_bell_button")
+                            ) {
+                                Icon(
+                                    imageVector = if (unreadNotificationsCount > 0) Icons.Default.NotificationsActive else Icons.Default.Notifications,
+                                    contentDescription = "اعلان‌های هوشمند",
+                                    tint = if (unreadNotificationsCount > 0) FintechGold else TextSecondary,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
+                            if (unreadNotificationsCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .size(14.dp)
+                                        .clip(CircleShape)
+                                        .background(FintechRed),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "$unreadNotificationsCount",
+                                        color = Color.White,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
                         // Refresh button
                         IconButton(
                             onClick = onRefresh,
@@ -179,7 +220,7 @@ fun MarketHeaderCard(
                                 .testTag("header_telegram_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Send,
+                                imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = "پشتیبانی تلگرام @ar1an00",
                                 tint = Color(0xFF229ED9),
                                 modifier = Modifier.size(17.dp)
@@ -293,13 +334,13 @@ fun MarketHeaderCard(
                     Box(modifier = Modifier.width(1.dp).height(20.dp).background(SurfaceCardBorder))
                     MiniStatItem(
                         title = "طلای ۱۸ عیار",
-                        value = "۴,۵۲۰,۰۰۰ ت",
+                        value = if (goldItem != null) Formatters.formatToman(goldItem.priceToman) else "۶,۴۵۰,۰۰۰ ت",
                         change = goldItem?.changePercent24h ?: 1.85
                     )
                     Box(modifier = Modifier.width(1.dp).height(20.dp).background(SurfaceCardBorder))
                     MiniStatItem(
                         title = "سکه امامی",
-                        value = "۵۳,۴۰۰,۰۰۰ ت",
+                        value = if (coinItem != null) Formatters.formatToman(coinItem.priceToman) else "۵۳,۴۰۰,۰۰۰ ت",
                         change = coinItem?.changePercent24h ?: 2.15
                     )
                 }

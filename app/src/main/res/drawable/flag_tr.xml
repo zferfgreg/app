@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Red Background -->
+    <path
+        android:fillColor="#E30A17"
+        android:pathData="M0,0h48v48h-48z"/>
+    <!-- Outer White Circle for Crescent -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,12a12,12 0 1,0 0,24a12,12 0 1,0 0,-24z"/>
+    <!-- Inner Red Circle to create Crescent -->
+    <path
+        android:fillColor="#E30A17"
+        android:pathData="M23,14a9.5,9.5 0 1,0 0,19a9.5,9.5 0 1,0 0,-19z"/>
+    <!-- White Star -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M31,20l1.2,2.8l2.9,0.2l-2.2,2l0.7,2.9l-2.6,-1.6l-2.6,1.6l0.7,-2.9l-2.2,-2l2.9,-0.2z"/>
+</vector>

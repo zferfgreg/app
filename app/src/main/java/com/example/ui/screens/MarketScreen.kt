@@ -88,6 +88,8 @@ fun MarketScreen(
     onCloseDetail: () -> Unit,
     onSetAlert: (ExchangeItem, Long?) -> Unit,
     onOpenConverter: (ExchangeItem) -> Unit,
+    unreadNotificationsCount: Int = 0,
+    onOpenNotifications: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var sortMenuExpanded by remember { mutableStateOf(false) }
@@ -108,7 +110,9 @@ fun MarketScreen(
                 MarketHeaderCard(
                     items = uiState.items,
                     isRefreshing = uiState.isRefreshing,
-                    onRefresh = onRefresh
+                    onRefresh = onRefresh,
+                    unreadNotificationsCount = unreadNotificationsCount,
+                    onOpenNotifications = onOpenNotifications
                 )
             }
 

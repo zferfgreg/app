@@ -6,11 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
 import com.example.data.model.AssetType
 import com.example.data.model.ExchangeItem
+import com.example.data.model.NotificationType
+import com.example.data.model.SmartNotification
 import com.example.data.repository.ExchangeRepository
+import com.example.util.NotificationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -99,6 +103,79 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
                 text = "سلام! من دستیار هوش مصنوعی تحلیلی بازار EXCHANCE هستم 🤖\nتمام نرخ‌های زنده دلار، طلا، سکه و کریپتو را به لحظه در اختیار دارم. چه تحلیلی مدنظر شماست؟"
             )
         )
+    }
+
+    // Smart Notifications State
+    val smartNotifications = MutableStateFlow<List<SmartNotification>>(listOf(
+        SmartNotification(
+            title = "خوش‌آمدید به EXCHANCE 🚀",
+            message = "نرخ‌های زنده بازار طلا، سکه، دلار و کریپتو با موفقیت بارگذاری شدند.",
+            type = NotificationType.MARKET_STATUS,
+            isRead = false
+        ),
+        SmartNotification(
+            title = "سیگنال هوش مصنوعی روز 🤖",
+            message = "دلار و تتر در محدوده تثبیت قرار دارند. طلای ۱۸ عیار همچنان سپر دفاعی ضد تورم است.",
+            type = NotificationType.AI_INSIGHT,
+            isRead = false
+        )
+    ))
+
+    val unreadNotificationsCount: StateFlow<Int> = smartNotifications.map { list ->
+        list.count { !it.isRead }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
+
+    val isNotificationSheetOpen = MutableStateFlow(false)
+
+    fun openNotificationSheet() {
+        isNotificationSheetOpen.value = true
+        markAllNotificationsRead()
+    }
+
+    fun closeNotificationSheet() {
+        isNotificationSheetOpen.value = false
+    }
+
+    fun markAllNotificationsRead() {
+        smartNotifications.update { list ->
+            list.map { it.copy(isRead = true) }
+        }
+    }
+
+    fun clearNotifications() {
+        smartNotifications.value = emptyList()
+    }
+
+    fun addNotification(notification: SmartNotification) {
+        smartNotifications.update { listOf(notification) + it }
+        try {
+            NotificationHelper.showSystemNotification(
+                getApplication(),
+                notification.id.hashCode(),
+                notification.title,
+                notification.message
+            )
+        } catch (e: Exception) {
+            // Ignored
+        }
+    }
+
+    // Advanced Settings State
+    val autoRefreshSec = MutableStateFlow(30)
+    val hapticEnabled = MutableStateFlow(true)
+    val highVolatilityAlert = MutableStateFlow(true)
+    val aiPersona = MutableStateFlow("متعادل و منطقی")
+    val defaultGoldWage = MutableStateFlow(7)
+
+    fun setAutoRefreshSec(sec: Int) { autoRefreshSec.value = sec }
+    fun toggleHaptic() { hapticEnabled.value = !hapticEnabled.value }
+    fun toggleVolatilityAlert() { highVolatilityAlert.value = !highVolatilityAlert.value }
+    fun setAiPersona(persona: String) { aiPersona.value = persona }
+    fun setDefaultGoldWage(wage: Int) { defaultGoldWage.value = wage }
+    fun clearCache() {
+        viewModelScope.launch {
+            refreshRates()
+        }
     }
 
     val uiState: StateFlow<MarketUiState> = combine(

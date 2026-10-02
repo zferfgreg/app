@@ -1,0 +1,30 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Deep Blue Background -->
+    <path
+        android:fillColor="#012169"
+        android:pathData="M0,0h48v48h-48z"/>
+    <!-- Diagonal White Crosses -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M0,0L48,48M48,0L0,48"
+        android:strokeWidth="7"
+        android:strokeColor="#FFFFFF"/>
+    <!-- Diagonal Red Crosses -->
+    <path
+        android:fillColor="#C8102E"
+        android:pathData="M0,0L48,48M48,0L0,48"
+        android:strokeWidth="3.2"
+        android:strokeColor="#C8102E"/>
+    <!-- White St George Cross -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M19,0h10v48h-10z M0,19h48v10h-48z"/>
+    <!-- Red St George Cross -->
+    <path
+        android:fillColor="#C8102E"
+        android:pathData="M21,0h6v48h-6z M0,21h48v6h-48z"/>
+</vector>

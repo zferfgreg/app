@@ -6,6 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,15 +29,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.HeadsetMic
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Paid
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -47,11 +55,17 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -59,25 +73,40 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
 import com.example.ui.theme.DarkBg
 import com.example.ui.theme.FintechCyan
 import com.example.ui.theme.FintechGold
 import com.example.ui.theme.FintechGreen
+import com.example.ui.theme.FintechPurple
+import com.example.ui.theme.FintechRed
 import com.example.ui.theme.SurfaceCard
 import com.example.ui.theme.SurfaceCardBorder
 import com.example.ui.theme.SurfaceCardLight
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.viewmodel.ExchangeViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
-    useRials: Boolean,
-    onToggleUseRials: () -> Unit,
+    viewModel: ExchangeViewModel,
     modifier: Modifier = Modifier
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val autoRefreshSec by viewModel.autoRefreshSec.collectAsStateWithLifecycle()
+    val hapticEnabled by viewModel.hapticEnabled.collectAsStateWithLifecycle()
+    val volatilityAlert by viewModel.highVolatilityAlert.collectAsStateWithLifecycle()
+    val aiPersona by viewModel.aiPersona.collectAsStateWithLifecycle()
+    val goldWage by viewModel.defaultGoldWage.collectAsStateWithLifecycle()
+
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var cacheClearedNotification by remember { mutableStateOf(false) }
+
     val telegramId = "@ar1an00"
     val telegramUsername = "ar1an00"
 
@@ -96,24 +125,43 @@ fun SettingsScreen(
         clipboard.setPrimaryClip(clip)
         Toast.makeText(context, "آیدی $telegramId در کلیپ‌بورد کپی شد", Toast.LENGTH_SHORT).show()
     }
+
+    fun shareApp() {
+        try {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    """
+                    🚀 با اپلیکیشن EXCHANCE، قیمت لحظه‌ای دلار، انواع طلا و سکه، ارزهای جهانی و رمزارزها رو با نمودارهای تحلیلی و هوش مصنوعی دنبال کنید!
+                    📲 ارتباط و دریافت: https://t.me/$telegramUsername
+                    """.trimIndent()
+                )
+            }
+            context.startActivity(Intent.createChooser(shareIntent, "اشتراک‌گذاری برنامه با دوستان"))
+        } catch (e: Exception) {
+            // Ignored
+        }
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(DarkBg),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 95.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         // Header
         item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 6.dp),
                 horizontalAlignment = Alignment.End
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "تنظیمات و اطلاعات",
+                        text = "تنظیمات پیشرفته",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 20.sp
@@ -121,75 +169,242 @@ fun SettingsScreen(
                         color = TextPrimary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = null,
-                        tint = FintechCyan,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(FintechCyan.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = null,
+                            tint = FintechCyan,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
                 Text(
-                    text = "شخصی‌سازی نمایش قیمت‌ها و منابع داده",
+                    text = "شخصی‌سازی کامل هوش مصنوعی، نرخ‌ها و هشدارهای بازار",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary
                 )
             }
         }
 
-        // Currency Unit Preference
+        // Section 1: Currency Unit Preference
         item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .border(1.dp, SurfaceCardBorder, RoundedCornerShape(18.dp)),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard)
+            SettingsCard(
+                title = "واحد پول پایه",
+                icon = Icons.Default.Paid,
+                iconTint = FintechGold
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Switch(
-                        checked = useRials,
-                        onCheckedChange = { onToggleUseRials() },
+                        checked = uiState.useRials,
+                        onCheckedChange = { viewModel.toggleUseRials() },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = FintechCyan,
-                            checkedTrackColor = FintechCyan.copy(alpha = 0.3f),
+                            checkedTrackColor = FintechCyan.copy(alpha = 0.35f),
                             uncheckedThumbColor = TextMuted,
                             uncheckedTrackColor = SurfaceCardLight
                         ),
                         modifier = Modifier.testTag("toggle_rials_switch")
                     )
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = if (uiState.useRials) "واحد: ریال (۱۰ برابر تومان)" else "واحد: تومان",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (uiState.useRials) "تمام نرخ‌های ارز، طلا و رمزارز با ریال نمایش داده می‌شوند" else "نرخ‌ها مطابق عرف بازار ایران به تومان هستند",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextMuted
+                        )
+                    }
+                }
+            }
+        }
+
+        // Section 2: Auto-Refresh Interval
+        item {
+            SettingsCard(
+                title = "سرعت بروزرسانی خودکار نرخ‌ها",
+                icon = Icons.Default.Speed,
+                iconTint = FintechCyan
+            ) {
+                Column {
+                    Text(
+                        text = "بازه زمانی دریافت آخرین قیمت‌ها از سرور TGJU و بایننس:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    val refreshOptions = listOf(
+                        15 to "۱۵ ثانیه",
+                        30 to "۳۰ ثانیه",
+                        60 to "۱ دقیقه",
+                        300 to "۵ دقیقه"
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        refreshOptions.forEach { (sec, label) ->
+                            val isSelected = autoRefreshSec == sec
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) FintechCyan.copy(alpha = 0.2f) else SurfaceCardLight)
+                                    .border(
+                                        1.dp,
+                                        if (isSelected) FintechCyan else SurfaceCardBorder,
+                                        RoundedCornerShape(12.dp)
+                                    )
+                                    .clickable { viewModel.setAutoRefreshSec(sec) }
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) FintechCyan else TextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Section 3: AI Market Analyst Persona
+        item {
+            SettingsCard(
+                title = "سبک تحلیل هوش مصنوعی (Gemini)",
+                icon = Icons.Default.AutoAwesome,
+                iconTint = FintechPurple
+            ) {
+                Column {
+                    Text(
+                        text = "رویکرد هوش مصنوعی در پاسخ به پرسش‌ها و تحلیل پورتفوی شما:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    val personas = listOf(
+                        "متعادل و منطقی" to "⚖️ متعادل",
+                        "تحلیلگر تکنیکال" to "📈 تکنیکال",
+                        "محافظه‌کار و امن" to "🛡️ ضد تورم"
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        personas.forEach { (key, label) ->
+                            val isSelected = aiPersona == key
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) FintechPurple.copy(alpha = 0.2f) else SurfaceCardLight)
+                                    .border(
+                                        1.dp,
+                                        if (isSelected) FintechPurple else SurfaceCardBorder,
+                                        RoundedCornerShape(12.dp)
+                                    )
+                                    .clickable { viewModel.setAiPersona(key) }
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) FintechPurple else TextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Section 4: Market Volatility & Haptic Feedback
+        item {
+            SettingsCard(
+                title = "هشدارها و بازخورد لمسی",
+                icon = Icons.Default.NotificationsActive,
+                iconTint = FintechRed
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    // Volatility Switch
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Switch(
+                            checked = volatilityAlert,
+                            onCheckedChange = { viewModel.toggleVolatilityAlert() },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = FintechRed,
+                                checkedTrackColor = FintechRed.copy(alpha = 0.35f),
+                                uncheckedThumbColor = TextMuted,
+                                uncheckedTrackColor = SurfaceCardLight
+                            )
+                        )
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                text = "نمایش واحد قیمت به ریال",
+                                text = "هشدار نوسانات شدید بازار",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                 color = TextPrimary
                             )
                             Text(
-                                text = if (useRials) "قیمت‌ها به ریال (۱۰ برابر تومان) نمایش داده می‌شوند" else "قیمت‌ها به تومان نمایش داده می‌شوند",
+                                text = "نمایش نوتیفیکیشن در صورت تغییر بیش از ۳٪ در ۲۴ ساعت",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = TextMuted
                             )
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(SurfaceCardLight),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Paid,
-                                contentDescription = null,
-                                tint = FintechGold,
-                                modifier = Modifier.size(20.dp)
+                    }
+
+                    // Haptic Switch
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Switch(
+                            checked = hapticEnabled,
+                            onCheckedChange = { viewModel.toggleHaptic() },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = FintechCyan,
+                                checkedTrackColor = FintechCyan.copy(alpha = 0.35f),
+                                uncheckedThumbColor = TextMuted,
+                                uncheckedTrackColor = SurfaceCardLight
+                            )
+                        )
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "لرزش هپتیک دکمه‌ها (Haptic)",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                color = TextPrimary
+                            )
+                            Text(
+                                text = "فیدبک لمسی سبک هنگام لمس نرخ‌ها و جابجایی تب‌ها",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextMuted
                             )
                         }
                     }
@@ -197,67 +412,149 @@ fun SettingsScreen(
             }
         }
 
-        // Live Data Feed Information
+        // Section 5: Gold Wage / Fee Calculator Setting
         item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .border(1.dp, SurfaceCardBorder, RoundedCornerShape(18.dp)),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard)
+            SettingsCard(
+                title = "محاسبات اجرت و حباب طلا",
+                icon = Icons.Default.Paid,
+                iconTint = FintechGold
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Counter Controls (- / +)
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(FintechGreen)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "متصل به سرور مارکت",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = FintechGreen
-                            )
+                        IconButton(
+                            onClick = { if (goldWage > 1) viewModel.setDefaultGoldWage(goldWage - 1) },
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(SurfaceCardLight)
+                        ) {
+                            Icon(Icons.Default.Remove, contentDescription = "کاهش", tint = TextPrimary, modifier = Modifier.size(16.dp))
                         }
 
                         Text(
-                            text = "وضعیت منابع نرخ‌ها",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
+                            text = "$goldWage%",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                            color = FintechGold
                         )
+
+                        IconButton(
+                            onClick = { if (goldWage < 30) viewModel.setDefaultGoldWage(goldWage + 1) },
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(SurfaceCardLight)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "افزایش", tint = TextPrimary, modifier = Modifier.size(16.dp))
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    StatusItem(name = "مرجع دلار، طلا، سکه و ارزها", source = "شبکه اطلاع‌رسانی طلا و ارز (TGJU.org)", isLive = true)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    StatusItem(name = "قیمت لحظه‌ای رمزارزها", source = "TGJU & Binance REST API", isLive = true)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    StatusItem(name = "سکه و مسکوکات بهار آزادی", source = "اتحادیه طلا و جواهر (TGJU)", isLive = true)
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "اجرت ساخت پیش‌فرض طلا",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "مبنای محاسبه در مبدل هوشمند و ماشین‌حساب طلا",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextMuted
+                        )
+                    }
                 }
             }
         }
 
-        // Telegram Support Card (@ar1an00)
+        // Section 6: Data & Storage
+        item {
+            SettingsCard(
+                title = "مدیریت حافظه و پایگاه داده",
+                icon = Icons.Default.DeleteSweep,
+                iconTint = FintechGreen
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                viewModel.clearCache()
+                                cacheClearedNotification = true
+                                coroutineScope.launch {
+                                    delay(3000)
+                                    cacheClearedNotification = false
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceCardBorder)
+                        ) {
+                            Text(text = "پاک‌سازی حافظه موقت", color = FintechCyan, fontSize = 12.sp)
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "تازه‌سازی و پاک کردن کش",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                color = TextPrimary
+                            )
+                            Text(
+                                text = "حذف داده‌های موقت و دانلود مجدد آخرین نرخ‌ها",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextMuted
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = cacheClearedNotification,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(FintechGreen.copy(alpha = 0.15f))
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Text(
+                                text = "حافظه موقت پاک شد و تمام نرخ‌ها بازخوانی شدند ✔",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = FintechGreen
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = FintechGreen, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        // Section 7: Telegram Support & Sharing (@ar1an00)
         item {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .border(1.dp, FintechCyan.copy(alpha = 0.6f), RoundedCornerShape(20.dp)),
+                    .border(1.dp, FintechCyan.copy(alpha = 0.5f), RoundedCornerShape(20.dp)),
                 colors = CardDefaults.cardColors(containerColor = SurfaceCardLight)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(18.dp)
+                        .padding(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -271,7 +568,7 @@ fun SettingsScreen(
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "پاسخگویی سریع",
+                                text = "پشتیبانی ۲۴ ساعته",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = FintechCyan
                             )
@@ -280,20 +577,20 @@ fun SettingsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
-                                    text = "پشتیبانی و ارتباط",
+                                    text = "پشتیبانی و ارتباط تلگرام",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                     color = TextPrimary
                                 )
                                 Text(
-                                    text = "ارتباط مستقیم با ادمین در تلگرام",
+                                    text = "ارتباط مستقیم با توسعه‌دهنده در تلگرام",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = TextSecondary
                                 )
                             }
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
                             Box(
                                 modifier = Modifier
-                                    .size(44.dp)
+                                    .size(40.dp)
                                     .clip(CircleShape)
                                     .background(
                                         Brush.linearGradient(
@@ -303,16 +600,16 @@ fun SettingsScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Send,
+                                    imageVector = Icons.AutoMirrored.Filled.Send,
                                     contentDescription = "تلگرام",
                                     tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Telegram ID highlight box
                     Row(
@@ -327,13 +624,13 @@ fun SettingsScreen(
                     ) {
                         IconButton(
                             onClick = { copyTelegramId() },
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(34.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "کپی آیدی تلگرام",
+                                contentDescription = "کپی آیدی",
                                 tint = FintechCyan,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
 
@@ -355,20 +652,22 @@ fun SettingsScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Action buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OutlinedButton(
-                            onClick = { copyTelegramId() },
+                            onClick = { shareApp() },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceCardBorder)
                         ) {
-                            Text(text = "کپی آیدی", color = TextSecondary, fontSize = 12.sp)
+                            Icon(Icons.Default.Share, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "معرفی برنامه", color = TextSecondary, fontSize = 11.5.sp)
                         }
 
                         Button(
@@ -377,43 +676,43 @@ fun SettingsScreen(
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF229ED9))
                         ) {
-                            Icon(imageVector = Icons.Default.OpenInNew, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "ارسال پیام", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "گفتگو در تلگرام", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
             }
         }
 
-        // About EXCHANCE Card
+        // Section 8: About & Server Status
         item {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
                     .border(1.dp, SurfaceCardBorder, RoundedCornerShape(20.dp)),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCardLight)
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(18.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.exchance_icon),
                         contentDescription = "EXCHANCE",
                         modifier = Modifier
-                            .size(60.dp)
+                            .size(54.dp)
                             .clip(RoundedCornerShape(14.dp))
                     )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
                         text = "EXCHANCE",
-                        style = MaterialTheme.typography.titleLarge.copy(
+                        style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Black,
                             letterSpacing = 2.sp
                         ),
@@ -421,19 +720,34 @@ fun SettingsScreen(
                     )
 
                     Text(
-                        text = "نسخه ۱.۰.۰ • اکسچنس",
+                        text = "نسخه ۱.۰.۰ • مانیتورینگ هوشمند بازار مالی",
                         style = MaterialTheme.typography.labelSmall,
                         color = FintechGold
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    Text(
-                        text = "برنامه تخصصی دیدن و محاسبه نرخ لحظه‌ای دلار، تتر، ارزهای بین‌المللی، انواع طلا و سکه، و ارزهای دیجیتال برتر جهان با رابط کاربری لوکس و فوق سریع.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SurfaceCardLight)
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(FintechGreen)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "پایدار و متصل", fontSize = 11.sp, color = FintechGreen, fontWeight = FontWeight.Bold)
+                        }
+                        Text(text = "وضعیت وب‌سرویس TGJU و بایننس", fontSize = 11.sp, color = TextPrimary)
+                    }
                 }
             }
         }
@@ -441,17 +755,54 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun StatusItem(name: String, source: String, isLive: Boolean) {
-    Row(
+private fun SettingsCard(
+    title: String,
+    icon: ImageVector,
+    iconTint: Color,
+    content: @Composable () -> Unit
+) {
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(SurfaceCardLight)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .clip(RoundedCornerShape(18.dp))
+            .border(1.dp, SurfaceCardBorder, RoundedCornerShape(18.dp)),
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard)
     ) {
-        Text(text = source, style = MaterialTheme.typography.labelSmall, color = TextMuted)
-        Text(text = name, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), color = TextPrimary)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(iconTint.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            content()
+        }
     }
 }

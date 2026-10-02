@@ -36,6 +36,7 @@ import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -43,6 +44,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,6 +62,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.data.model.NotificationType
+import com.example.data.model.SmartNotification
+import com.example.ui.components.SmartNotificationSheet
 import com.example.ui.screens.AiAnalystScreen
 import com.example.ui.screens.ConverterScreen
 import com.example.ui.screens.MarketScreen
@@ -100,6 +105,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppScreen(viewModel: ExchangeViewModel) {
     var currentTab by remember { mutableStateOf(MainTab.MARKET) }
@@ -107,6 +113,10 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
     val fromItem by viewModel.converterFromItem.collectAsStateWithLifecycle()
     val toItem by viewModel.converterToItem.collectAsStateWithLifecycle()
     val converterAmount by viewModel.converterAmount.collectAsStateWithLifecycle()
+
+    val smartNotifications by viewModel.smartNotifications.collectAsStateWithLifecycle()
+    val unreadNotificationsCount by viewModel.unreadNotificationsCount.collectAsStateWithLifecycle()
+    val isNotificationSheetOpen by viewModel.isNotificationSheetOpen.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -218,7 +228,9 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                         onOpenConverter = {
                             viewModel.setupConverterFor(it)
                             currentTab = MainTab.CONVERTER
-                        }
+                        },
+                        unreadNotificationsCount = unreadNotificationsCount,
+                        onOpenNotifications = { viewModel.openNotificationSheet() }
                     )
                 }
 
@@ -252,11 +264,31 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
 
                 MainTab.SETTINGS -> {
                     SettingsScreen(
-                        useRials = uiState.useRials,
-                        onToggleUseRials = { viewModel.toggleUseRials() }
+                        viewModel = viewModel
                     )
                 }
             }
+        }
+
+        // Smart Notification Sheet
+        if (isNotificationSheetOpen) {
+            val notifSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            SmartNotificationSheet(
+                notifications = smartNotifications,
+                sheetState = notifSheetState,
+                onDismiss = { viewModel.closeNotificationSheet() },
+                onClearAll = { viewModel.clearNotifications() },
+                onSimulateAlert = {
+                    val randPrice = (93000..96000).random()
+                    viewModel.addNotification(
+                        SmartNotification(
+                            title = "🎯 نوسان شدید قیمت: بیت‌کوین و تتر",
+                            message = "نرخ تتر در بازار به $randPrice تومان رسید (نوسان روزانه فراتر از حد مجاز).",
+                            type = NotificationType.VOLATILITY
+                        )
+                    )
+                }
+            )
         }
     }
 }
