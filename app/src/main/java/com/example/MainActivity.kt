@@ -118,6 +118,10 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
     val unreadNotificationsCount by viewModel.unreadNotificationsCount.collectAsStateWithLifecycle()
     val isNotificationSheetOpen by viewModel.isNotificationSheetOpen.collectAsStateWithLifecycle()
 
+    val groundedNews by viewModel.groundedNews.collectAsStateWithLifecycle()
+    val marketSentiment by viewModel.marketSentiment.collectAsStateWithLifecycle()
+    val isLoadingNews by viewModel.isLoadingNews.collectAsStateWithLifecycle()
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.errorMessage) {
@@ -230,7 +234,12 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                             currentTab = MainTab.CONVERTER
                         },
                         unreadNotificationsCount = unreadNotificationsCount,
-                        onOpenNotifications = { viewModel.openNotificationSheet() }
+                        onOpenNotifications = { viewModel.openNotificationSheet() },
+                        sentiment = marketSentiment,
+                        newsList = groundedNews,
+                        isLoadingNews = isLoadingNews,
+                        onRefreshSentiment = { viewModel.refreshMarketSentiment() },
+                        onRefreshNews = { viewModel.fetchGroundedNews() }
                     )
                 }
 

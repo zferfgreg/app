@@ -6,9 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
 import com.example.data.model.AssetType
 import com.example.data.model.ExchangeItem
+import com.example.data.model.FinancialNewsItem
+import com.example.data.model.MarketSentimentData
 import com.example.data.model.NotificationType
 import com.example.data.model.SmartNotification
+import com.example.data.remote.GeminiService
 import com.example.data.repository.ExchangeRepository
+import com.example.service.FcmTokenManager
 import com.example.util.NotificationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -65,6 +69,41 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
     private val repository = ExchangeRepository(database.watchlistDao())
 
     private val _filterParams = MutableStateFlow(FilterParams())
+
+    // Grounded News & Market Sentiment State
+    val groundedNews = MutableStateFlow<List<FinancialNewsItem>>(emptyList())
+    val marketSentiment = MutableStateFlow(MarketSentimentData())
+    val isLoadingNews = MutableStateFlow(false)
+
+    init {
+        FcmTokenManager.init(application)
+        loadInitialNewsAndSentiment()
+    }
+
+    private fun loadInitialNewsAndSentiment() {
+        viewModelScope.launch {
+            val news = GeminiService.fetchGroundedNews(listOf("USD", "GOLD_18K", "BTC"))
+            groundedNews.value = news
+            marketSentiment.value = GeminiService.calculateMarketSentiment(uiState.value.items, news)
+        }
+    }
+
+    fun fetchGroundedNews() {
+        viewModelScope.launch {
+            isLoadingNews.value = true
+            val watched = uiState.value.items.filter { it.isFavorite || it.alertPriceToman != null }.map { it.symbol }
+            val news = GeminiService.fetchGroundedNews(watched)
+            groundedNews.value = news
+            marketSentiment.value = GeminiService.calculateMarketSentiment(uiState.value.items, news)
+            isLoadingNews.value = false
+        }
+    }
+
+    fun refreshMarketSentiment() {
+        viewModelScope.launch {
+            marketSentiment.value = GeminiService.calculateMarketSentiment(uiState.value.items, groundedNews.value)
+        }
+    }
 
     // Converter State
     val converterFromItem = MutableStateFlow<ExchangeItem?>(null)
@@ -275,6 +314,22 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
             _filterParams.update { it.copy(isRefreshing = false) }
             if (result.isFailure) {
                 _filterParams.update { it.copy(errorMessage = "عدم دسترسی به اینترنت، قیمت‌های آفلاین فعال است") }
+            } else {
+                // Check watchlist target thresholds for real-time notification
+                val currentItems = uiState.value.items
+                currentItems.forEach { item ->
+                    val alert = item.alertPriceToman
+                    if (alert != null && item.priceToman >= alert) {
+                        FcmTokenManager.triggerPriceAlertNotification(
+                            context = getApplication(),
+                            assetNameFa = item.nameFa,
+                            targetPriceToman = alert,
+                            currentPriceToman = item.priceToman,
+                            onNotificationCreated = { addNotification(it) }
+                        )
+                    }
+                }
+                marketSentiment.value = GeminiService.calculateMarketSentiment(currentItems, groundedNews.value)
             }
         }
     }
@@ -288,6 +343,19 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
     fun setTargetAlert(item: ExchangeItem, targetToman: Long?) {
         viewModelScope.launch {
             repository.setTargetAlert(item.id, targetToman)
+            if (targetToman != null) {
+                FcmTokenManager.subscribeToAssetTopic(item.id)
+                addNotification(
+                    SmartNotification(
+                        title = "🎯 ثبت آستانه هشدار قیمت: ${item.nameFa}",
+                        message = "هدف قیمتی بر روی ${"%,d".format(targetToman)} تومان فعال شد. در صورت رسیدن یا عبور قیمت، بلافاصله مطلع می‌شوید.",
+                        type = NotificationType.PRICE_ALERT,
+                        targetItemId = item.id
+                    )
+                )
+            } else {
+                FcmTokenManager.unsubscribeFromAssetTopic(item.id)
+            }
         }
     }
 

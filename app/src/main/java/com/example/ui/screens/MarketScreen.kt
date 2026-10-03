@@ -55,9 +55,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.AssetType
 import com.example.data.model.ExchangeItem
+import com.example.data.model.FinancialNewsItem
+import com.example.data.model.MarketSentimentData
 import com.example.ui.components.AssetDetailSheet
 import com.example.ui.components.ExchangeItemCard
+import com.example.ui.components.GroundedNewsSection
 import com.example.ui.components.MarketHeaderCard
+import com.example.ui.components.MarketSentimentSection
 import com.example.ui.theme.DarkBg
 import com.example.ui.theme.FintechCyan
 import com.example.ui.theme.FintechGold
@@ -90,6 +94,11 @@ fun MarketScreen(
     onOpenConverter: (ExchangeItem) -> Unit,
     unreadNotificationsCount: Int = 0,
     onOpenNotifications: () -> Unit = {},
+    sentiment: MarketSentimentData = MarketSentimentData(),
+    newsList: List<FinancialNewsItem> = emptyList(),
+    isLoadingNews: Boolean = false,
+    onRefreshSentiment: () -> Unit = {},
+    onRefreshNews: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var sortMenuExpanded by remember { mutableStateOf(false) }
@@ -113,6 +122,14 @@ fun MarketScreen(
                     onRefresh = onRefresh,
                     unreadNotificationsCount = unreadNotificationsCount,
                     onOpenNotifications = onOpenNotifications
+                )
+            }
+
+            // Market Sentiment Meter Section
+            item {
+                MarketSentimentSection(
+                    sentiment = sentiment,
+                    onRefreshSentiment = onRefreshSentiment
                 )
             }
 
@@ -429,6 +446,18 @@ fun MarketScreen(
                     onClick = { onItemClick(item) },
                     onToggleFavorite = { onToggleFavorite(item) }
                 )
+            }
+
+            // Google Search Grounded Financial News Section
+            if (newsList.isNotEmpty()) {
+                item {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    GroundedNewsSection(
+                        newsList = newsList,
+                        isLoading = isLoadingNews,
+                        onRefreshNews = onRefreshNews
+                    )
+                }
             }
         }
 
