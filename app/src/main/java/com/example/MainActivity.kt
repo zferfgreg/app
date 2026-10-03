@@ -35,11 +35,13 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CurrencyExchange
+import androidx.compose.material.icons.outlined.Newspaper
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -74,6 +76,7 @@ import com.example.data.model.SmartNotification
 import com.example.ui.components.SmartNotificationSheet
 import com.example.ui.screens.AiAnalystScreen
 import com.example.ui.screens.ConverterScreen
+import com.example.ui.screens.EconomicNewsScreen
 import com.example.ui.screens.MarketScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.WatchlistScreen
@@ -92,10 +95,10 @@ import com.example.ui.viewmodel.ExchangeViewModel
 
 enum class MainTab(val titleFa: String, val activeIcon: ImageVector, val inactiveIcon: ImageVector, val tag: String) {
     MARKET("بازار", Icons.AutoMirrored.Filled.TrendingUp, Icons.AutoMirrored.Outlined.TrendingUp, "nav_market"),
-    CONVERTER("مبدل", Icons.Filled.SwapHoriz, Icons.Outlined.SwapHoriz, "nav_converter"),
+    NEWS("اخبار", Icons.Filled.Newspaper, Icons.Outlined.Newspaper, "nav_news"),
     AI_ANALYST("هوش مصنوعی", Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome, "nav_ai_analyst"),
-    WATCHLIST("دیده‌بان", Icons.Filled.Star, Icons.Outlined.StarBorder, "nav_watchlist"),
-    SETTINGS("تنظیمات", Icons.Filled.Settings, Icons.Outlined.Settings, "nav_settings")
+    CONVERTER("مبدل", Icons.Filled.SwapHoriz, Icons.Outlined.SwapHoriz, "nav_converter"),
+    WATCHLIST("دیده‌بان", Icons.Filled.Star, Icons.Outlined.StarBorder, "nav_watchlist")
 }
 
 class MainActivity : ComponentActivity() {
@@ -268,6 +271,14 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                     )
                 }
 
+                MainTab.NEWS -> {
+                    EconomicNewsScreen(
+                        newsList = groundedNews,
+                        isLoading = isLoadingNews,
+                        onRefreshNews = { viewModel.fetchGroundedNews() }
+                    )
+                }
+
                 MainTab.CONVERTER -> {
                     ConverterScreen(
                         items = uiState.items,
@@ -293,12 +304,6 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                         onItemClick = { viewModel.openDetail(it) },
                         onToggleFavorite = { viewModel.toggleFavorite(it) },
                         onNavigateToMarket = { currentTab = MainTab.MARKET }
-                    )
-                }
-
-                MainTab.SETTINGS -> {
-                    SettingsScreen(
-                        viewModel = viewModel
                     )
                 }
             }

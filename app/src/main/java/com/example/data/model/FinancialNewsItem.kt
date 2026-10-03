@@ -16,5 +16,9 @@ data class FinancialNewsItem(
     val sourceUrl: String? = null,
     val publishTime: String = "همین حالا",
     val sentiment: NewsSentiment = NewsSentiment.NEUTRAL,
-    val relevantSymbol: String = "USD"
+    val relevantSymbol: String = "USD",
+    val category: String = "طلا و ارز",
+    val readTime: String = "۲ دقیقه",
+    val aiImpact: String = "مثبت بر جریان نقدینگی",
+    val isHot: Boolean = false
 )

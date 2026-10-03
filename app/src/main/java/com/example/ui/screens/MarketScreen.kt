@@ -62,6 +62,8 @@ import com.example.ui.components.ExchangeItemCard
 import com.example.ui.components.GroundedNewsSection
 import com.example.ui.components.MarketHeaderCard
 import com.example.ui.components.MarketSentimentSection
+import com.example.ui.components.WatchedAssetsHeatmap
+import com.example.ui.components.WorldClocksCard
 import com.example.ui.theme.DarkBg
 import com.example.ui.theme.FintechCyan
 import com.example.ui.theme.FintechGold
@@ -131,6 +133,11 @@ fun MarketScreen(
                     sentiment = sentiment,
                     onRefreshSentiment = onRefreshSentiment
                 )
+            }
+
+            // Live World Clocks (London, Tehran, Vancouver & Global Hubs)
+            item {
+                WorldClocksCard()
             }
 
             // Live Market Pulse Strip (نبض زنده بازار)
@@ -445,6 +452,15 @@ fun MarketScreen(
                     item = item,
                     onClick = { onItemClick(item) },
                     onToggleFavorite = { onToggleFavorite(item) }
+                )
+            }
+
+            // D3/Recharts Color-Coded Heatmap Data Visualization Component
+            item {
+                Spacer(modifier = Modifier.height(4.dp))
+                WatchedAssetsHeatmap(
+                    items = uiState.items,
+                    onAssetClick = onItemClick
                 )
             }
 

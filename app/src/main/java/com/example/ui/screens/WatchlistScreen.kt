@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.ExchangeItem
 import com.example.ui.components.AssetIconBadge
 import com.example.ui.components.ExchangeItemCard
+import com.example.ui.components.WatchedAssetsHeatmap
 import com.example.ui.theme.DarkBg
 import com.example.ui.theme.FintechCyan
 import com.example.ui.theme.FintechGold
@@ -106,6 +107,14 @@ fun WatchlistScreen(
                     textAlign = TextAlign.End
                 )
             }
+        }
+
+        // Color-Coded Heatmap Data Visualization Component
+        item {
+            WatchedAssetsHeatmap(
+                items = items,
+                onAssetClick = onItemClick
+            )
         }
 
         // Active Alerts Section (if any)
