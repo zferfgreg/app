@@ -135,12 +135,13 @@ fun MarketHeaderCard(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                // Top App Bar inside header
+                // Top App Bar inside header - Clean, luxury & decluttered
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    // Actions on Left: Notification Bell & Refresh
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -150,9 +151,9 @@ fun MarketHeaderCard(
                             IconButton(
                                 onClick = onOpenNotifications,
                                 modifier = Modifier
-                                    .size(38.dp)
+                                    .size(36.dp)
                                     .clip(CircleShape)
-                                    .background(SurfaceCardLight.copy(alpha = 0.85f))
+                                    .background(SurfaceCardLight.copy(alpha = 0.9f))
                                     .border(1.dp, if (unreadNotificationsCount > 0) FintechGold else SurfaceCardBorder, CircleShape)
                                     .testTag("notification_bell_button")
                             ) {
@@ -160,7 +161,7 @@ fun MarketHeaderCard(
                                     imageVector = if (unreadNotificationsCount > 0) Icons.Default.NotificationsActive else Icons.Default.Notifications,
                                     contentDescription = "اعلان‌های هوشمند",
                                     tint = if (unreadNotificationsCount > 0) FintechGold else TextSecondary,
-                                    modifier = Modifier.size(19.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                             if (unreadNotificationsCount > 0) {
@@ -186,9 +187,9 @@ fun MarketHeaderCard(
                         IconButton(
                             onClick = onRefresh,
                             modifier = Modifier
-                                .size(38.dp)
+                                .size(36.dp)
                                 .clip(CircleShape)
-                                .background(SurfaceCardLight.copy(alpha = 0.8f))
+                                .background(SurfaceCardLight.copy(alpha = 0.9f))
                                 .border(1.dp, SurfaceCardBorder, CircleShape)
                                 .testTag("refresh_button")
                         ) {
@@ -197,78 +198,36 @@ fun MarketHeaderCard(
                                 contentDescription = "بروزرسانی",
                                 tint = FintechCyan,
                                 modifier = Modifier
-                                    .size(20.dp)
+                                    .size(18.dp)
                                     .then(if (isRefreshing) Modifier.rotate(rotation) else Modifier)
                             )
                         }
-
-                        // Telegram Support button (@ar1an00)
-                        IconButton(
-                            onClick = {
-                                try {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/ar1an00"))
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    // ignore
-                                }
-                            },
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF229ED9).copy(alpha = 0.2f))
-                                .border(1.dp, Color(0xFF229ED9).copy(alpha = 0.6f), CircleShape)
-                                .testTag("header_telegram_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Send,
-                                contentDescription = "پشتیبانی تلگرام @ar1an00",
-                                tint = Color(0xFF229ED9),
-                                modifier = Modifier.size(17.dp)
-                            )
-                        }
                     }
 
-                    // Live Status Pill with TGJU.org branding
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(SurfaceCardLight.copy(alpha = 0.8f))
-                            .border(1.dp, SurfaceCardBorder, RoundedCornerShape(20.dp))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = "منبع: TGJU.org | زنده",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            ),
-                            color = TextSecondary
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(FintechGreen)
-                        )
-                    }
-
-                    // Logo & App Name
+                    // Logo & App Name with Live Status
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(horizontalAlignment = Alignment.End) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(FintechGreen)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "EXCHANCE",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Black,
+                                        letterSpacing = 1.2.sp
+                                    ),
+                                    color = TextPrimary
+                                )
+                            }
                             Text(
-                                text = "EXCHANCE",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Black,
-                                    letterSpacing = 1.5.sp
-                                ),
-                                color = TextPrimary
-                            )
-                            Text(
-                                text = "دلار و کریپتو",
+                                text = "دلار • طلا • کریپتو (زنده)",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.5.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Medium
                                 ),
                                 color = FintechGold
@@ -279,7 +238,7 @@ fun MarketHeaderCard(
                             painter = painterResource(id = R.drawable.exchance_icon),
                             contentDescription = "EXCHANCE",
                             modifier = Modifier
-                                .size(34.dp)
+                                .size(32.dp)
                                 .clip(RoundedCornerShape(8.dp))
                         )
                     }
