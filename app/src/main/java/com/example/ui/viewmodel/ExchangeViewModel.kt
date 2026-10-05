@@ -3,12 +3,15 @@ package com.example.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.local.AlertCondition
 import com.example.data.local.AppDatabase
+import com.example.data.local.PriceAlertEntity
 import com.example.data.model.AssetType
 import com.example.data.model.ExchangeItem
 import com.example.data.model.FinancialNewsItem
 import com.example.data.model.MarketSentimentData
 import com.example.data.model.NotificationType
+import com.example.data.model.PriceSource
 import com.example.data.model.SmartNotification
 import com.example.data.remote.GeminiService
 import com.example.data.repository.ExchangeRepository
@@ -66,7 +69,10 @@ data class MarketUiState(
 
 class ExchangeViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
-    private val repository = ExchangeRepository(database.watchlistDao())
+    private val repository = ExchangeRepository(database.watchlistDao(), database.priceAlertDao())
+
+    val allPriceAlerts: StateFlow<List<PriceAlertEntity>> = repository.allPriceAlerts
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _filterParams = MutableStateFlow(FilterParams())
 
@@ -206,6 +212,25 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
     val aiPersona = MutableStateFlow("متعادل و منطقی")
     val defaultGoldWage = MutableStateFlow(7)
 
+    // Theme Mode & Animated Background State
+    val isDarkTheme = MutableStateFlow(true)
+    val isAnimationEnabled = MutableStateFlow(true)
+    val selectedSourceFilter = MutableStateFlow<PriceSource?>(null)
+
+    fun toggleTheme() { isDarkTheme.value = !isDarkTheme.value }
+    fun setDarkTheme(dark: Boolean) { isDarkTheme.value = dark }
+    fun toggleAnimation() { isAnimationEnabled.value = !isAnimationEnabled.value }
+    fun setAnimationEnabled(enabled: Boolean) { isAnimationEnabled.value = enabled }
+
+    fun setAssetPriceSource(assetId: String, newSource: PriceSource) {
+        repository.setAssetPriceSource(assetId, newSource)
+    }
+
+    fun setGlobalSourceFilter(source: PriceSource?) {
+        selectedSourceFilter.value = source
+        repository.setGlobalPriceSource(source)
+    }
+
     fun setAutoRefreshSec(sec: Int) { autoRefreshSec.value = sec }
     fun toggleHaptic() { hapticEnabled.value = !hapticEnabled.value }
     fun toggleVolatilityAlert() { highVolatilityAlert.value = !highVolatilityAlert.value }
@@ -315,8 +340,34 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
             if (result.isFailure) {
                 _filterParams.update { it.copy(errorMessage = "عدم دسترسی به اینترنت، قیمت‌های آفلاین فعال است") }
             } else {
-                // Check watchlist target thresholds for real-time notification
                 val currentItems = uiState.value.items
+                val timeString = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+
+                // 1. Evaluate custom Firebase Price Alerts
+                val activeAlerts = allPriceAlerts.value.filter { it.isEnabled }
+                activeAlerts.forEach { alert ->
+                    val matchedItem = currentItems.find { it.id == alert.assetId }
+                    if (matchedItem != null) {
+                        val triggered = when (alert.condition) {
+                            AlertCondition.ABOVE -> matchedItem.priceToman >= alert.targetPriceToman
+                            AlertCondition.BELOW -> matchedItem.priceToman <= alert.targetPriceToman
+                            AlertCondition.PERCENT_CHANGE -> kotlin.math.abs(matchedItem.changePercent24h) >= alert.percentThreshold
+                        }
+                        if (triggered) {
+                            FcmTokenManager.triggerCustomPriceAlertPush(
+                                context = getApplication(),
+                                alert = alert,
+                                currentPriceToman = matchedItem.priceToman,
+                                currentPriceUsd = matchedItem.priceUsd,
+                                isTest = false,
+                                onNotificationCreated = { addNotification(it) }
+                            )
+                            repository.markAlertTriggered(alert.id, timeString)
+                        }
+                    }
+                }
+
+                // 2. Evaluate legacy quick alert price
                 currentItems.forEach { item ->
                     val alert = item.alertPriceToman
                     if (alert != null && item.priceToman >= alert) {
@@ -332,6 +383,46 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
                 marketSentiment.value = GeminiService.calculateMarketSentiment(currentItems, groundedNews.value)
             }
         }
+    }
+
+    fun saveCustomPriceAlert(alert: PriceAlertEntity) {
+        viewModelScope.launch {
+            repository.savePriceAlert(alert)
+            addNotification(
+                SmartNotification(
+                    title = "🎯 ثبت هشدار سفارشی: ${alert.assetNameFa}",
+                    message = "پوش نوتیفیکیشن Firebase برای آستانه ${com.example.util.Formatters.formatToman(alert.targetPriceToman)} با موفقیت فعال شد.",
+                    type = NotificationType.PRICE_ALERT,
+                    targetItemId = alert.assetId
+                )
+            )
+        }
+    }
+
+    fun deletePriceAlert(id: String) {
+        viewModelScope.launch {
+            repository.deletePriceAlertById(id)
+        }
+    }
+
+    fun togglePriceAlert(id: String, isEnabled: Boolean) {
+        viewModelScope.launch {
+            repository.togglePriceAlert(id, isEnabled)
+        }
+    }
+
+    fun testPriceAlertPush(alert: PriceAlertEntity) {
+        val currentItem = uiState.value.items.find { it.id == alert.assetId }
+        val currentToman = currentItem?.priceToman ?: alert.targetPriceToman
+        val currentUsd = currentItem?.priceUsd ?: alert.targetPriceUsd
+        FcmTokenManager.triggerCustomPriceAlertPush(
+            context = getApplication(),
+            alert = alert,
+            currentPriceToman = currentToman,
+            currentPriceUsd = currentUsd,
+            isTest = true,
+            onNotificationCreated = { addNotification(it) }
+        )
     }
 
     fun toggleFavorite(item: ExchangeItem) {

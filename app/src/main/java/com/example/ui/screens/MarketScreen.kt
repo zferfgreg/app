@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,17 +54,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.local.PriceAlertEntity
 import com.example.data.model.AssetType
 import com.example.data.model.ExchangeItem
 import com.example.data.model.FinancialNewsItem
 import com.example.data.model.MarketSentimentData
+import com.example.data.model.PriceSource
 import com.example.ui.components.AssetDetailSheet
+import com.example.ui.components.CustomPriceAlertSheet
 import com.example.ui.components.ExchangeItemCard
 import com.example.ui.components.GroundedNewsSection
 import com.example.ui.components.MarketHeaderCard
 import com.example.ui.components.MarketSentimentSection
+import com.example.ui.components.PriceSourceFilterBar
+import com.example.ui.components.ScrollDownBlurEffect
 import com.example.ui.components.WatchedAssetsHeatmap
 import com.example.ui.components.WorldClocksCard
+import com.example.ui.theme.AppTheme
 import com.example.ui.theme.DarkBg
 import com.example.ui.theme.FintechCyan
 import com.example.ui.theme.FintechGold
@@ -101,19 +108,35 @@ fun MarketScreen(
     isLoadingNews: Boolean = false,
     onRefreshSentiment: () -> Unit = {},
     onRefreshNews: () -> Unit = {},
+    isDarkTheme: Boolean = true,
+    onToggleTheme: () -> Unit = {},
+    isAnimationEnabled: Boolean = true,
+    onToggleAnimation: () -> Unit = {},
+    selectedSourceFilter: PriceSource? = null,
+    onSelectSourceFilter: (PriceSource?) -> Unit = {},
+    onSelectAssetSource: (String, PriceSource) -> Unit = { _, _ -> },
+    customAlerts: List<PriceAlertEntity> = emptyList(),
+    onSaveCustomAlert: (PriceAlertEntity) -> Unit = {},
+    onDeleteCustomAlert: (String) -> Unit = {},
+    onToggleCustomAlert: (String, Boolean) -> Unit = { _, _ -> },
+    onTestCustomAlert: (PriceAlertEntity) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val colors = AppTheme.colors
+    val listState = rememberLazyListState()
     var sortMenuExpanded by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var itemForCustomAlert by remember { mutableStateOf<ExchangeItem?>(null) }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBg)
+            .background(colors.bg)
     ) {
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 90.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // Market Overview Header Card
@@ -123,7 +146,19 @@ fun MarketScreen(
                     isRefreshing = uiState.isRefreshing,
                     onRefresh = onRefresh,
                     unreadNotificationsCount = unreadNotificationsCount,
-                    onOpenNotifications = onOpenNotifications
+                    onOpenNotifications = onOpenNotifications,
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = onToggleTheme,
+                    isAnimationEnabled = isAnimationEnabled,
+                    onToggleAnimation = onToggleAnimation
+                )
+            }
+
+            // Price Source Selector Chip Bar ("از سایت های که قیمت میگیری بیشتر کن بزار انتخاب کرد تو ارز")
+            item {
+                PriceSourceFilterBar(
+                    selectedSource = selectedSourceFilter,
+                    onSelectSource = onSelectSourceFilter
                 )
             }
 
@@ -477,6 +512,12 @@ fun MarketScreen(
             }
         }
 
+        // Animated Scroll Down & Blur Effect
+        ScrollDownBlurEffect(
+            listState = listState,
+            bottomPadding = 90.dp
+        )
+
         // Selected Asset Detail BottomSheet
         if (uiState.selectedDetailItem != null) {
             AssetDetailSheet(
@@ -485,7 +526,32 @@ fun MarketScreen(
                 onDismiss = onCloseDetail,
                 onToggleFavorite = onToggleFavorite,
                 onSetAlert = onSetAlert,
-                onOpenConverter = onOpenConverter
+                onOpenConverter = onOpenConverter,
+                onSelectSource = { source ->
+                    onSelectAssetSource(uiState.selectedDetailItem.id, source)
+                },
+                customAlerts = customAlerts,
+                onOpenCustomAlert = {
+                    itemForCustomAlert = uiState.selectedDetailItem
+                },
+                onDeleteCustomAlert = onDeleteCustomAlert,
+                onToggleCustomAlert = onToggleCustomAlert
+            )
+        }
+
+        // Custom Firebase Price Alert Sheet (FCM Push Configuration)
+        if (itemForCustomAlert != null) {
+            CustomPriceAlertSheet(
+                item = itemForCustomAlert!!,
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                onDismiss = { itemForCustomAlert = null },
+                onSaveAlert = { alert ->
+                    onSaveCustomAlert(alert)
+                    itemForCustomAlert = null
+                },
+                onTestNotification = { alert ->
+                    onTestCustomAlert(alert)
+                }
             )
         }
     }

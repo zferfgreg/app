@@ -25,11 +25,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -53,18 +54,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.model.ExchangeItem
-import com.example.ui.theme.DarkBg
+import com.example.ui.theme.AppTheme
 import com.example.ui.theme.FintechCyan
 import com.example.ui.theme.FintechGold
 import com.example.ui.theme.FintechGreen
 import com.example.ui.theme.FintechIndigo
 import com.example.ui.theme.FintechRed
-import com.example.ui.theme.SurfaceCard
-import com.example.ui.theme.SurfaceCardBorder
-import com.example.ui.theme.SurfaceCardLight
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.util.Formatters
 
 @Composable
@@ -74,15 +69,19 @@ fun MarketHeaderCard(
     onRefresh: () -> Unit,
     unreadNotificationsCount: Int = 0,
     onOpenNotifications: () -> Unit = {},
+    isDarkTheme: Boolean = true,
+    onToggleTheme: () -> Unit = {},
+    isAnimationEnabled: Boolean = true,
+    onToggleAnimation: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val colors = AppTheme.colors
     val usdItem = items.find { it.id == "USD" }
     val usdtItem = items.find { it.id == "USDT" }
     val btcItem = items.find { it.id == "BTC" }
     val goldItem = items.find { it.id == "GOLD_18K" }
     val coinItem = items.find { it.id == "SEKKE_EMAMI" }
 
-    val context = LocalContext.current
     val infiniteTransition = rememberInfiniteTransition(label = "spin")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -98,9 +97,9 @@ fun MarketHeaderCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
-            .border(1.dp, SurfaceCardBorder, RoundedCornerShape(22.dp)),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .border(1.dp, colors.surfaceBorder, RoundedCornerShape(22.dp)),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             // Background visual banner image with overlay
@@ -111,10 +110,10 @@ fun MarketHeaderCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp),
-                alpha = 0.28f
+                alpha = if (isDarkTheme) 0.28f else 0.12f
             )
 
-            // Dark gradient overlay
+            // Dynamic gradient overlay
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -123,8 +122,8 @@ fun MarketHeaderCard(
                         Brush.verticalGradient(
                             listOf(
                                 Color.Transparent,
-                                SurfaceCard.copy(alpha = 0.85f),
-                                SurfaceCard
+                                colors.surface.copy(alpha = 0.85f),
+                                colors.surface
                             )
                         )
                     )
@@ -141,26 +140,66 @@ fun MarketHeaderCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Actions on Left: Notification Bell & Refresh
+                    // Actions on Left: Theme switch, Animation toggle, Notification Bell, Refresh
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        // Smart Notification Button with Badge
+                        // 1. Theme Toggle Button (White Theme / Dark Theme)
+                        IconButton(
+                            onClick = onToggleTheme,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(colors.surfaceLight.copy(alpha = 0.9f))
+                                .border(1.dp, colors.surfaceBorder, CircleShape)
+                                .testTag("theme_toggle_button")
+                        ) {
+                            Icon(
+                                imageVector = if (isDarkTheme) Icons.Default.Brightness7 else Icons.Default.Brightness4,
+                                contentDescription = if (isDarkTheme) "تم سفید (روشن)" else "تم تاریک",
+                                tint = if (isDarkTheme) FintechGold else FintechCyan,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        // 2. Animated Background Toggle Button
+                        IconButton(
+                            onClick = onToggleAnimation,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (isAnimationEnabled) FintechCyan.copy(alpha = 0.2f) else colors.surfaceLight)
+                                .border(
+                                    1.dp,
+                                    if (isAnimationEnabled) FintechCyan else colors.surfaceBorder,
+                                    CircleShape
+                                )
+                                .testTag("animation_toggle_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = "پس‌زمینه متحرک",
+                                tint = if (isAnimationEnabled) FintechCyan else colors.textMuted,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
+                        // 3. Smart Notification Button with Badge
                         Box {
                             IconButton(
                                 onClick = onOpenNotifications,
                                 modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(SurfaceCardLight.copy(alpha = 0.9f))
-                                    .border(1.dp, if (unreadNotificationsCount > 0) FintechGold else SurfaceCardBorder, CircleShape)
-                                    .testTag("notification_bell_button")
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(colors.surfaceLight.copy(alpha = 0.9f))
+                                .border(1.dp, if (unreadNotificationsCount > 0) FintechGold else colors.surfaceBorder, CircleShape)
+                                .testTag("notification_bell_button")
                             ) {
                                 Icon(
                                     imageVector = if (unreadNotificationsCount > 0) Icons.Default.NotificationsActive else Icons.Default.Notifications,
                                     contentDescription = "اعلان‌های هوشمند",
-                                    tint = if (unreadNotificationsCount > 0) FintechGold else TextSecondary,
+                                    tint = if (unreadNotificationsCount > 0) FintechGold else colors.textSecondary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -183,14 +222,14 @@ fun MarketHeaderCard(
                             }
                         }
 
-                        // Refresh button
+                        // 4. Refresh button
                         IconButton(
                             onClick = onRefresh,
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(SurfaceCardLight.copy(alpha = 0.9f))
-                                .border(1.dp, SurfaceCardBorder, CircleShape)
+                                .background(colors.surfaceLight.copy(alpha = 0.9f))
+                                .border(1.dp, colors.surfaceBorder, CircleShape)
                                 .testTag("refresh_button")
                         ) {
                             Icon(
@@ -221,7 +260,7 @@ fun MarketHeaderCard(
                                         fontWeight = FontWeight.Black,
                                         letterSpacing = 1.2.sp
                                     ),
-                                    color = TextPrimary
+                                    color = colors.textPrimary
                                 )
                             }
                             Text(
@@ -255,8 +294,8 @@ fun MarketHeaderCard(
                     HeroTickerCard(
                         titleFa = "دلار آمریکا (نقدی)",
                         titleEn = "USD / TOMAN",
-                        priceToman = usdItem?.priceToman ?: 94800L,
-                        changePercent = usdItem?.changePercent24h ?: 1.35,
+                        priceToman = usdItem?.priceToman ?: 258465L,
+                        changePercent = usdItem?.changePercent24h ?: 1.45,
                         accentColor = FintechGreen,
                         modifier = Modifier.weight(1f)
                     )
@@ -265,8 +304,8 @@ fun MarketHeaderCard(
                     HeroTickerCard(
                         titleFa = "تتر (دلار دیجیتال)",
                         titleEn = "USDT / TOMAN",
-                        priceToman = usdtItem?.priceToman ?: 94950L,
-                        changePercent = usdtItem?.changePercent24h ?: 1.15,
+                        priceToman = usdtItem?.priceToman ?: 259000L,
+                        changePercent = usdtItem?.changePercent24h ?: 1.25,
                         accentColor = FintechCyan,
                         modifier = Modifier.weight(1f)
                     )
@@ -279,28 +318,28 @@ fun MarketHeaderCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(SurfaceCardLight.copy(alpha = 0.5f))
-                        .border(1.dp, SurfaceCardBorder.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .background(colors.surfaceLight.copy(alpha = 0.7f))
+                        .border(1.dp, colors.surfaceBorder.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
                         .padding(horizontal = 10.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     MiniStatItem(
                         title = "بیت‌کوین",
-                        value = Formatters.formatUsd(btcItem?.priceUsd ?: 91613.0),
-                        change = btcItem?.changePercent24h ?: 2.84
+                        value = Formatters.formatUsd(btcItem?.priceUsd ?: 84200.0),
+                        change = btcItem?.changePercent24h ?: 2.85
                     )
-                    Box(modifier = Modifier.width(1.dp).height(20.dp).background(SurfaceCardBorder))
+                    Box(modifier = Modifier.width(1.dp).height(20.dp).background(colors.surfaceBorder))
                     MiniStatItem(
                         title = "طلای ۱۸ عیار",
-                        value = if (goldItem != null) Formatters.formatToman(goldItem.priceToman) else "۶,۴۵۰,۰۰۰ ت",
-                        change = goldItem?.changePercent24h ?: 1.85
+                        value = if (goldItem != null) Formatters.formatToman(goldItem.priceToman) else "۲۵,۶۹۴,۴۰۰ ت",
+                        change = goldItem?.changePercent24h ?: 0.15
                     )
-                    Box(modifier = Modifier.width(1.dp).height(20.dp).background(SurfaceCardBorder))
+                    Box(modifier = Modifier.width(1.dp).height(20.dp).background(colors.surfaceBorder))
                     MiniStatItem(
                         title = "سکه امامی",
-                        value = if (coinItem != null) Formatters.formatToman(coinItem.priceToman) else "۵۳,۴۰۰,۰۰۰ ت",
-                        change = coinItem?.changePercent24h ?: 2.15
+                        value = if (coinItem != null) Formatters.formatToman(coinItem.priceToman) else "۲۶۰,۳۹۵,۰۰۰ ت",
+                        change = coinItem?.changePercent24h ?: 0.25
                     )
                 }
             }
@@ -317,13 +356,14 @@ private fun HeroTickerCard(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
+    val colors = AppTheme.colors
     val isPositive = changePercent >= 0
 
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(SurfaceCardLight)
-            .border(1.dp, SurfaceCardBorder, RoundedCornerShape(14.dp))
+            .background(colors.surfaceLight)
+            .border(1.dp, colors.surfaceBorder, RoundedCornerShape(14.dp))
             .padding(12.dp)
     ) {
         Column {
@@ -347,7 +387,7 @@ private fun HeroTickerCard(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     ),
-                    color = TextSecondary
+                    color = colors.textSecondary
                 )
             }
 
@@ -359,7 +399,7 @@ private fun HeroTickerCard(
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 16.sp
                 ),
-                color = TextPrimary
+                color = colors.textPrimary
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -383,12 +423,13 @@ private fun MiniStatItem(
     value: String,
     change: Double
 ) {
+    val colors = AppTheme.colors
     val isPositive = change >= 0
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = title,
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-            color = TextMuted
+            color = colors.textMuted
         )
         Text(
             text = value,
@@ -396,7 +437,7 @@ private fun MiniStatItem(
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.5.sp
             ),
-            color = TextPrimary
+            color = colors.textPrimary
         )
         Text(
             text = Formatters.formatPercent(change),

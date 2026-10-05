@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.model.AssetType
 import com.example.data.model.ExchangeItem
+import com.example.ui.theme.AppTheme
 import com.example.ui.theme.FintechCyan
 import com.example.ui.theme.FintechGold
 import com.example.ui.theme.FintechGreen
@@ -52,12 +53,6 @@ import com.example.ui.theme.FintechGreenBg
 import com.example.ui.theme.FintechIndigo
 import com.example.ui.theme.FintechRed
 import com.example.ui.theme.FintechRedBg
-import com.example.ui.theme.SurfaceCard
-import com.example.ui.theme.SurfaceCardBorder
-import com.example.ui.theme.SurfaceCardLight
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.util.Formatters
 
 @Composable
@@ -67,16 +62,17 @@ fun ExchangeItemCard(
     onToggleFavorite: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = AppTheme.colors
     val isPositive = item.changePercent24h >= 0
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .border(1.dp, SurfaceCardBorder, RoundedCornerShape(18.dp))
+            .border(1.dp, colors.surfaceBorder, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .testTag("exchange_card_${item.id}"),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -98,7 +94,7 @@ fun ExchangeItemCard(
                         fontSize = 15.sp,
                         letterSpacing = 0.3.sp
                     ),
-                    color = TextPrimary,
+                    color = colors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -112,7 +108,7 @@ fun ExchangeItemCard(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = TextMuted
+                        color = colors.textMuted
                     )
 
                     Spacer(modifier = Modifier.width(6.dp))
@@ -161,7 +157,7 @@ fun ExchangeItemCard(
                 )
             }
 
-            // Right Column: Name, Symbol, and Asset Icon + Favorite Star
+            // Right Column: Name, Symbol, Source Badge & Asset Icon + Favorite Star
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End,
@@ -177,24 +173,36 @@ fun ExchangeItemCard(
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.5.sp
                         ),
-                        color = TextPrimary,
+                        color = colors.textPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.End
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = item.symbol,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = TextSecondary,
-                        textAlign = TextAlign.End
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Text(
+                            text = "${item.selectedSource.icon} ${item.selectedSource.shortName}",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = FintechGold
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = item.symbol,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = colors.textSecondary,
+                            textAlign = TextAlign.End
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Asset Icon Badge
                 AssetIconBadge(item = item)
@@ -209,80 +217,11 @@ fun ExchangeItemCard(
                     Icon(
                         imageVector = if (item.isFavorite) Icons.Default.Star else Icons.Outlined.StarBorder,
                         contentDescription = "نشان کردن",
-                        tint = if (item.isFavorite) FintechGold else TextMuted,
+                        tint = if (item.isFavorite) FintechGold else colors.textMuted,
                         modifier = Modifier.size(20.dp)
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun AssetIconBadge(item: ExchangeItem, modifier: Modifier = Modifier) {
-    val flagRes = when (item.id) {
-        "USD" -> R.drawable.flag_us
-        "EUR" -> R.drawable.flag_eu
-        "AED" -> R.drawable.flag_ae
-        "GBP" -> R.drawable.flag_gb
-        "TRY" -> R.drawable.flag_tr
-        "CAD" -> R.drawable.flag_ca
-        "USD_NIMA" -> R.drawable.flag_ir
-        "CHF" -> R.drawable.flag_chf
-        "CNY" -> R.drawable.flag_cny
-        else -> null
-    }
-
-    if (flagRes != null) {
-        Box(
-            modifier = modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .border(1.5.dp, SurfaceCardBorder, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = flagRes),
-                contentDescription = item.nameFa,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-    } else {
-        val (backgroundBrush, symbolText) = when (item.id) {
-            "USDT" -> Brush.linearGradient(listOf(Color(0xFF26A17B), Color(0xFF10B981))) to "₮"
-            "BTC" -> Brush.linearGradient(listOf(Color(0xFFF7931A), FintechGold)) to "₿"
-            "ETH" -> Brush.linearGradient(listOf(Color(0xFF627EEA), FintechCyan)) to "Ξ"
-            "SOL" -> Brush.linearGradient(listOf(Color(0xFF9945FF), Color(0xFF14F195))) to "◎"
-            "BNB" -> Brush.linearGradient(listOf(Color(0xFFF3BA2F), Color(0xFFE5A118))) to "BNB"
-            "XRP" -> Brush.linearGradient(listOf(Color(0xFF23292F), Color(0xFF00AAE4))) to "✕"
-            "TON" -> Brush.linearGradient(listOf(Color(0xFF0088CC), Color(0xFF55ACEE))) to "💎"
-            "DOGE" -> Brush.linearGradient(listOf(Color(0xFFC2A633), Color(0xFFE1B846))) to "Ð"
-            "ADA" -> Brush.linearGradient(listOf(Color(0xFF0033AD), Color(0xFF3366FF))) to "₳"
-            "TRX" -> Brush.linearGradient(listOf(Color(0xFFEF0027), Color(0xFFFF5252))) to "TRX"
-            "AVAX" -> Brush.linearGradient(listOf(Color(0xFFE84142), Color(0xFFFF7273))) to "▲"
-            "SHIB" -> Brush.linearGradient(listOf(Color(0xFFFFA409), Color(0xFFFF6400))) to "🐕"
-            "GOLD_18K", "GOLD_24K" -> Brush.linearGradient(listOf(FintechGold, Color(0xFFFDE047))) to "⚜"
-            "SEKKE_EMAMI", "SEKKE_BAHAR", "SEKKE_NIM", "SEKKE_ROB", "SEKKE_GERMI" ->
-                Brush.linearGradient(listOf(Color(0xFFD97706), FintechGold)) to "🪙"
-            "OUNCE_GOLD" -> Brush.linearGradient(listOf(FintechGold, Color(0xFFB45309))) to "OZ"
-            else -> Brush.linearGradient(listOf(SurfaceCardLight, SurfaceCardBorder)) to item.symbol.take(2)
-        }
-
-        Box(
-            modifier = modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .border(1.dp, SurfaceCardBorder, CircleShape)
-                .background(backgroundBrush),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = symbolText,
-                color = Color.White,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = if (symbolText.length > 2) 10.sp else 15.sp
-            )
         }
     }
 }

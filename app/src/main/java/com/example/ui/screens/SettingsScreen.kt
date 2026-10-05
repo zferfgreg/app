@@ -33,16 +33,22 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Paid
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Vibration
+import com.example.data.model.PriceSource
+import com.example.ui.theme.AppTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -102,6 +108,10 @@ fun SettingsScreen(
     val volatilityAlert by viewModel.highVolatilityAlert.collectAsStateWithLifecycle()
     val aiPersona by viewModel.aiPersona.collectAsStateWithLifecycle()
     val goldWage by viewModel.defaultGoldWage.collectAsStateWithLifecycle()
+    val isDarkTheme by viewModel.isDarkTheme.collectAsStateWithLifecycle()
+    val isAnimationEnabled by viewModel.isAnimationEnabled.collectAsStateWithLifecycle()
+    val selectedSourceFilter by viewModel.selectedSourceFilter.collectAsStateWithLifecycle()
+    val colors = AppTheme.colors
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()

@@ -25,8 +25,8 @@ import kotlin.random.Random
 object GeminiService {
 
     private const val TAG = "GeminiService"
-    private const val PRIMARY_MODEL = "gemini-2.5-flash"
-    private const val SECONDARY_MODEL = "gemini-3.5-flash"
+    private const val PRIMARY_MODEL = "gemini-3.5-flash"
+    private const val SECONDARY_MODEL = "gemini-flash-latest"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -348,53 +348,76 @@ object GeminiService {
                 تاثیر: [توضیح کوتاه تاثیر خبر بر قیمت]
             """.trimIndent()
 
-            val jsonBody = JSONObject().apply {
-                put("contents", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("parts", JSONArray().apply {
-                            put(JSONObject().apply { put("text", prompt) })
+            val modelsToTry = listOf(PRIMARY_MODEL, SECONDARY_MODEL)
+            for (model in modelsToTry) {
+                try {
+                    // Try with googleSearch first, and fallback to direct text prompt if rejected
+                    val jsonWithSearch = JSONObject().apply {
+                        put("contents", JSONArray().apply {
+                            put(JSONObject().apply {
+                                put("parts", JSONArray().apply {
+                                    put(JSONObject().apply { put("text", prompt) })
+                                })
+                            })
                         })
-                    })
-                })
-                put("tools", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("googleSearch", JSONObject())
-                    })
-                })
-            }
+                        put("tools", JSONArray().apply {
+                            put(JSONObject().apply {
+                                put("googleSearch", JSONObject())
+                            })
+                        })
+                    }
 
-            val requestBody = jsonBody.toString().toRequestBody("application/json".toMediaType())
-            val request = Request.Builder()
-                .url("https://generativelanguage.googleapis.com/v1beta/models/$PRIMARY_MODEL:generateContent?key=$apiKey")
-                .post(requestBody)
-                .build()
+                    var req = Request.Builder()
+                        .url("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey")
+                        .post(jsonWithSearch.toString().toRequestBody("application/json".toMediaType()))
+                        .build()
 
-            val response = client.newCall(request).execute()
-            val responseBody = response.body?.string() ?: ""
+                    var resp = client.newCall(req).execute()
+                    var respBody = resp.body?.string() ?: ""
 
-            if (!response.isSuccessful) {
-                Log.e(TAG, "Gemini search grounding error: ${response.code}")
-                return@withContext getFallbackGroundedNews(watchedSymbols)
-            }
+                    // If search tool is not supported on this tier/model, try plain generation
+                    if (!resp.isSuccessful) {
+                        val jsonWithoutSearch = JSONObject().apply {
+                            put("contents", JSONArray().apply {
+                                put(JSONObject().apply {
+                                    put("parts", JSONArray().apply {
+                                        put(JSONObject().apply { put("text", prompt) })
+                                    })
+                                })
+                            })
+                        }
+                        req = Request.Builder()
+                            .url("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey")
+                            .post(jsonWithoutSearch.toString().toRequestBody("application/json".toMediaType()))
+                            .build()
+                        resp = client.newCall(req).execute()
+                        respBody = resp.body?.string() ?: ""
+                    }
 
-            val parsedJson = JSONObject(responseBody)
-            val candidates = parsedJson.optJSONArray("candidates")
-            val firstCandidate = candidates?.optJSONObject(0)
-            val content = firstCandidate?.optJSONObject("content")
-            val parts = content?.optJSONArray("parts")
-            val text = parts?.optJSONObject(0)?.optString("text")
+                    if (resp.isSuccessful) {
+                        val parsedJson = JSONObject(respBody)
+                        val candidates = parsedJson.optJSONArray("candidates")
+                        val firstCandidate = candidates?.optJSONObject(0)
+                        val content = firstCandidate?.optJSONObject("content")
+                        val parts = content?.optJSONArray("parts")
+                        val text = parts?.optJSONObject(0)?.optString("text")
 
-            val groundingMetadata = firstCandidate?.optJSONObject("groundingMetadata")
-            val webSearchQueries = groundingMetadata?.optJSONArray("webSearchQueries")
-            val searchUrl = if (webSearchQueries != null && webSearchQueries.length() > 0) {
-                "https://www.google.com/search?q=" + webSearchQueries.optString(0)
-            } else {
-                "https://www.google.com/search?q=financial+market+news"
-            }
+                        val groundingMetadata = firstCandidate?.optJSONObject("groundingMetadata")
+                        val webSearchQueries = groundingMetadata?.optJSONArray("webSearchQueries")
+                        val searchUrl = if (webSearchQueries != null && webSearchQueries.length() > 0) {
+                            "https://www.google.com/search?q=" + webSearchQueries.optString(0)
+                        } else {
+                            "https://www.tgju.org"
+                        }
 
-            if (!text.isNullOrBlank()) {
-                val parsedNews = parseNewsFromText(text, searchUrl)
-                if (parsedNews.isNotEmpty()) return@withContext parsedNews
+                        if (!text.isNullOrBlank()) {
+                            val parsedNews = parseNewsFromText(text, searchUrl)
+                            if (parsedNews.isNotEmpty()) return@withContext parsedNews
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.d(TAG, "Fetch grounded news fallback for $model: ${e.message}")
+                }
             }
 
             getFallbackGroundedNews(watchedSymbols)

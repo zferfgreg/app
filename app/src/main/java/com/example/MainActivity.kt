@@ -62,6 +62,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
@@ -72,7 +73,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.NotificationType
+import com.example.data.model.PriceSource
 import com.example.data.model.SmartNotification
+import com.example.ui.components.AnimatedFintechBackground
 import com.example.ui.components.SmartNotificationSheet
 import com.example.ui.screens.AiAnalystScreen
 import com.example.ui.screens.ConverterScreen
@@ -80,6 +83,7 @@ import com.example.ui.screens.EconomicNewsScreen
 import com.example.ui.screens.MarketScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.WatchlistScreen
+import com.example.ui.theme.AppTheme
 import com.example.ui.theme.DarkBg
 import com.example.ui.theme.FintechCyan
 import com.example.ui.theme.FintechGold
@@ -108,8 +112,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
-                MainAppScreen(viewModel = viewModel)
+            val isDarkTheme by viewModel.isDarkTheme.collectAsStateWithLifecycle()
+            val isAnimationEnabled by viewModel.isAnimationEnabled.collectAsStateWithLifecycle()
+
+            MyApplicationTheme(darkTheme = isDarkTheme) {
+                AnimatedFintechBackground(
+                    isDarkTheme = isDarkTheme,
+                    isAnimationEnabled = isAnimationEnabled
+                ) {
+                    MainAppScreen(viewModel = viewModel)
+                }
             }
         }
     }
@@ -118,6 +130,11 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppScreen(viewModel: ExchangeViewModel) {
+    val isDarkTheme by viewModel.isDarkTheme.collectAsStateWithLifecycle()
+    val isAnimationEnabled by viewModel.isAnimationEnabled.collectAsStateWithLifecycle()
+    val selectedSourceFilter by viewModel.selectedSourceFilter.collectAsStateWithLifecycle()
+    val colors = AppTheme.colors
+
     var currentTab by remember { mutableStateOf(MainTab.MARKET) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val fromItem by viewModel.converterFromItem.collectAsStateWithLifecycle()
@@ -125,6 +142,7 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
     val converterAmount by viewModel.converterAmount.collectAsStateWithLifecycle()
 
     val smartNotifications by viewModel.smartNotifications.collectAsStateWithLifecycle()
+    val allPriceAlerts by viewModel.allPriceAlerts.collectAsStateWithLifecycle()
     val unreadNotificationsCount by viewModel.unreadNotificationsCount.collectAsStateWithLifecycle()
     val isNotificationSheetOpen by viewModel.isNotificationSheetOpen.collectAsStateWithLifecycle()
 
@@ -159,9 +177,8 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
     }
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DarkBg),
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Box(
@@ -170,13 +187,22 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                     .navigationBarsPadding()
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
+                // Frosted Glass Blur Backdrop
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(RoundedCornerShape(26.dp))
+                        .blur(16.dp)
+                        .background(colors.surface.copy(alpha = if (isDarkTheme) 0.60f else 0.75f))
+                )
+
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(26.dp))
-                        .border(1.dp, SurfaceCardBorder, RoundedCornerShape(26.dp))
+                        .border(1.dp, colors.surfaceBorder.copy(alpha = 0.8f), RoundedCornerShape(26.dp))
                         .testTag("main_bottom_nav"),
-                    color = SurfaceCard.copy(alpha = 0.95f),
+                    color = colors.surface.copy(alpha = if (isDarkTheme) 0.84f else 0.90f),
                     tonalElevation = 8.dp,
                     shadowElevation = 14.dp
                 ) {
@@ -267,7 +293,19 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                         newsList = groundedNews,
                         isLoadingNews = isLoadingNews,
                         onRefreshSentiment = { viewModel.refreshMarketSentiment() },
-                        onRefreshNews = { viewModel.fetchGroundedNews() }
+                        onRefreshNews = { viewModel.fetchGroundedNews() },
+                        isDarkTheme = isDarkTheme,
+                        onToggleTheme = { viewModel.toggleTheme() },
+                        isAnimationEnabled = isAnimationEnabled,
+                        onToggleAnimation = { viewModel.toggleAnimation() },
+                        selectedSourceFilter = selectedSourceFilter,
+                        onSelectSourceFilter = { viewModel.setGlobalSourceFilter(it) },
+                        onSelectAssetSource = { assetId, source -> viewModel.setAssetPriceSource(assetId, source) },
+                        customAlerts = allPriceAlerts,
+                        onSaveCustomAlert = { viewModel.saveCustomPriceAlert(it) },
+                        onDeleteCustomAlert = { viewModel.deletePriceAlert(it) },
+                        onToggleCustomAlert = { id, enabled -> viewModel.togglePriceAlert(id, enabled) },
+                        onTestCustomAlert = { viewModel.testPriceAlertPush(it) }
                     )
                 }
 
@@ -303,7 +341,11 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                         items = uiState.items,
                         onItemClick = { viewModel.openDetail(it) },
                         onToggleFavorite = { viewModel.toggleFavorite(it) },
-                        onNavigateToMarket = { currentTab = MainTab.MARKET }
+                        onNavigateToMarket = { currentTab = MainTab.MARKET },
+                        customAlerts = allPriceAlerts,
+                        onDeleteCustomAlert = { viewModel.deletePriceAlert(it) },
+                        onToggleCustomAlert = { id, enabled -> viewModel.togglePriceAlert(id, enabled) },
+                        onTestCustomAlert = { viewModel.testPriceAlertPush(it) }
                     )
                 }
             }
