@@ -146,6 +146,10 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
     val unreadNotificationsCount by viewModel.unreadNotificationsCount.collectAsStateWithLifecycle()
     val isNotificationSheetOpen by viewModel.isNotificationSheetOpen.collectAsStateWithLifecycle()
 
+    val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
+    val isAuthLoading by viewModel.isAuthLoading.collectAsStateWithLifecycle()
+    val syncState by viewModel.syncState.collectAsStateWithLifecycle()
+
     val groundedNews by viewModel.groundedNews.collectAsStateWithLifecycle()
     val marketSentiment by viewModel.marketSentiment.collectAsStateWithLifecycle()
     val isLoadingNews by viewModel.isLoadingNews.collectAsStateWithLifecycle()
@@ -305,7 +309,13 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                         onSaveCustomAlert = { viewModel.saveCustomPriceAlert(it) },
                         onDeleteCustomAlert = { viewModel.deletePriceAlert(it) },
                         onToggleCustomAlert = { id, enabled -> viewModel.togglePriceAlert(id, enabled) },
-                        onTestCustomAlert = { viewModel.testPriceAlertPush(it) }
+                        onTestCustomAlert = { viewModel.testPriceAlertPush(it) },
+                        currentUser = currentUser,
+                        isAuthLoading = isAuthLoading,
+                        syncState = syncState,
+                        onSignInGoogle = { viewModel.signInWithGoogle(context) },
+                        onSignOut = { viewModel.signOut() },
+                        onPinWidget = { viewModel.requestPinAppWidget(context) }
                     )
                 }
 

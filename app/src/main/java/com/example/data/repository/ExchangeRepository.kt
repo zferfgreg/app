@@ -29,6 +29,8 @@ class ExchangeRepository(
     private val _itemsFlow = MutableStateFlow<List<ExchangeItem>>(createInitialItems())
     val rawItemsFlow = _itemsFlow.asStateFlow()
 
+    fun getCurrentItems(): List<ExchangeItem> = _itemsFlow.value
+
     // Combined items flow with Watchlist favorites from Room
     val allItems: Flow<List<ExchangeItem>> = combine(_itemsFlow, watchlistDao.getAllWatchlist()) { items, watchlist ->
         val watchlistMap = watchlist.associateBy { it.id }

@@ -1,6 +1,7 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AlertCondition
@@ -16,7 +17,12 @@ import com.example.data.model.SmartNotification
 import com.example.data.remote.GeminiService
 import com.example.data.repository.ExchangeRepository
 import com.example.service.FcmTokenManager
+import com.example.service.FirebaseAuthManager
+import com.example.service.FirestoreSyncManager
+import com.example.service.SyncState
+import com.example.service.UserProfile
 import com.example.util.NotificationHelper
+import com.example.widget.MarketAppWidgetProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -81,26 +87,81 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
     val marketSentiment = MutableStateFlow(MarketSentimentData())
     val isLoadingNews = MutableStateFlow(false)
 
+    // Firebase Auth & Firestore Sync State
+    val currentUser: StateFlow<UserProfile?> = FirebaseAuthManager.currentUser
+    val isAuthLoading: StateFlow<Boolean> = FirebaseAuthManager.isLoading
+    val syncState: StateFlow<SyncState> = FirestoreSyncManager.syncState
+
     init {
         FcmTokenManager.init(application)
+        FirebaseAuthManager.init(application)
+        FirestoreSyncManager.init()
         loadInitialNewsAndSentiment()
+
+        // Auto-listen to cloud data if user is already signed in
+        FirebaseAuthManager.currentUser.value?.uid?.let { uid ->
+            FirestoreSyncManager.listenToCloudData(uid) { cloudAssetIds ->
+                viewModelScope.launch {
+                    cloudAssetIds.forEach { id ->
+                        repository.toggleFavorite(id, false)
+                    }
+                }
+            }
+        }
+    }
+
+    fun signInWithGoogle(context: Context) {
+        FirebaseAuthManager.signInWithGoogle(
+            context = context,
+            onSuccess = { profile ->
+                addNotification(
+                    SmartNotification(
+                        title = "☁️ ورود با حساب گوگل موفق بود",
+                        message = "خوش آمدید ${profile.displayName} عزیز. داده‌های دیده‌بان و هشدارهای قیمت در Firebase Firestore همگام‌سازی شدند.",
+                        type = NotificationType.MARKET_STATUS
+                    )
+                )
+                FirestoreSyncManager.listenToCloudData(profile.uid) { cloudAssetIds ->
+                    viewModelScope.launch {
+                        cloudAssetIds.forEach { id ->
+                            repository.toggleFavorite(id, false)
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    fun signOut() {
+        FirestoreSyncManager.stopListening()
+        FirebaseAuthManager.signOut {
+            addNotification(
+                SmartNotification(
+                    title = "خروج از حساب کاربری",
+                    message = "از حساب کاربری گوگل خارج شدید. اطلاعات به صورت محلی در دستگاه حفظ می‌شوند.",
+                    type = NotificationType.MARKET_STATUS
+                )
+            )
+        }
     }
 
     private fun loadInitialNewsAndSentiment() {
         viewModelScope.launch {
-            val news = GeminiService.fetchGroundedNews(listOf("USD", "GOLD_18K", "BTC"))
+            val items = repository.getCurrentItems().ifEmpty { uiState.value.items }
+            val news = GeminiService.fetchGroundedNews(listOf("USD", "GOLD_18K", "BTC"), items)
             groundedNews.value = news
-            marketSentiment.value = GeminiService.calculateMarketSentiment(uiState.value.items, news)
+            marketSentiment.value = GeminiService.calculateMarketSentiment(items, news)
         }
     }
 
     fun fetchGroundedNews() {
         viewModelScope.launch {
             isLoadingNews.value = true
-            val watched = uiState.value.items.filter { it.isFavorite || it.alertPriceToman != null }.map { it.symbol }
-            val news = GeminiService.fetchGroundedNews(watched)
+            val items = repository.getCurrentItems().ifEmpty { uiState.value.items }
+            val watched = items.filter { it.isFavorite || it.alertPriceToman != null }.map { it.symbol }
+            val news = GeminiService.fetchGroundedNews(watched, items)
             groundedNews.value = news
-            marketSentiment.value = GeminiService.calculateMarketSentiment(uiState.value.items, news)
+            marketSentiment.value = GeminiService.calculateMarketSentiment(items, news)
             isLoadingNews.value = false
         }
     }
@@ -381,13 +442,22 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
                 marketSentiment.value = GeminiService.calculateMarketSentiment(currentItems, groundedNews.value)
+                fetchGroundedNews()
+                MarketAppWidgetProvider.updateAllWidgets(getApplication())
             }
         }
+    }
+
+    fun requestPinAppWidget(context: Context): Boolean {
+        return MarketAppWidgetProvider.requestPinWidget(context)
     }
 
     fun saveCustomPriceAlert(alert: PriceAlertEntity) {
         viewModelScope.launch {
             repository.savePriceAlert(alert)
+            currentUser.value?.uid?.let { uid ->
+                FirestoreSyncManager.syncAlertToCloud(uid, alert)
+            }
             addNotification(
                 SmartNotification(
                     title = "🎯 ثبت هشدار سفارشی: ${alert.assetNameFa}",
@@ -402,6 +472,9 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
     fun deletePriceAlert(id: String) {
         viewModelScope.launch {
             repository.deletePriceAlertById(id)
+            currentUser.value?.uid?.let { uid ->
+                FirestoreSyncManager.deleteAlertFromCloud(uid, id)
+            }
         }
     }
 
@@ -427,7 +500,11 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleFavorite(item: ExchangeItem) {
         viewModelScope.launch {
+            val newFavStatus = !item.isFavorite
             repository.toggleFavorite(item.id, item.isFavorite)
+            currentUser.value?.uid?.let { uid ->
+                FirestoreSyncManager.syncFavoriteToCloud(uid, item.id, newFavStatus)
+            }
         }
     }
 

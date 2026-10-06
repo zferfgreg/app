@@ -60,14 +60,21 @@ import com.example.data.model.ExchangeItem
 import com.example.data.model.FinancialNewsItem
 import com.example.data.model.MarketSentimentData
 import com.example.data.model.PriceSource
+import com.example.service.SyncState
+import com.example.service.UserProfile
 import com.example.ui.components.AssetDetailSheet
 import com.example.ui.components.CustomPriceAlertSheet
 import com.example.ui.components.ExchangeItemCard
+import com.example.ui.components.GoogleAuthBottomBar
 import com.example.ui.components.GroundedNewsSection
 import com.example.ui.components.MarketHeaderCard
 import com.example.ui.components.MarketSentimentSection
+import com.example.ui.components.PersistentSearchHeader
 import com.example.ui.components.PriceSourceFilterBar
 import com.example.ui.components.ScrollDownBlurEffect
+import com.example.ui.components.ScrollMotionBlurEffect
+import com.example.ui.components.rememberScrollVelocity
+import com.example.ui.components.scrollMotionBlur
 import com.example.ui.components.WatchedAssetsHeatmap
 import com.example.ui.components.WorldClocksCard
 import com.example.ui.theme.AppTheme
@@ -120,31 +127,58 @@ fun MarketScreen(
     onDeleteCustomAlert: (String) -> Unit = {},
     onToggleCustomAlert: (String, Boolean) -> Unit = { _, _ -> },
     onTestCustomAlert: (PriceAlertEntity) -> Unit = {},
+    currentUser: UserProfile? = null,
+    isAuthLoading: Boolean = false,
+    syncState: SyncState = SyncState.IDLE,
+    onSignInGoogle: () -> Unit = {},
+    onSignOut: () -> Unit = {},
+    onPinWidget: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = AppTheme.colors
     val listState = rememberLazyListState()
-    var sortMenuExpanded by remember { mutableStateOf(false) }
+    val motionVelocity by rememberScrollVelocity(listState)
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var itemForCustomAlert by remember { mutableStateOf<ExchangeItem?>(null) }
 
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(colors.bg)
     ) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        // 1. Persistent Search Header with Real-Time Auto-Complete
+        PersistentSearchHeader(
+            searchQuery = uiState.searchQuery,
+            onSearchQueryChange = onSearchQueryChange,
+            allItems = uiState.items,
+            selectedCategory = uiState.selectedCategory,
+            onSelectCategory = onSelectCategory,
+            sortOrder = uiState.sortOrder,
+            onSortOrderChange = onSortOrderChange,
+            onItemClick = onItemClick
+        )
+
+        // 2. Scrollable Market Content with Dynamic Motion Blur
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
         ) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .scrollMotionBlur(motionVelocity),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
             // Market Overview Header Card
             item {
                 MarketHeaderCard(
                     items = uiState.items,
                     isRefreshing = uiState.isRefreshing,
                     onRefresh = onRefresh,
+                    onPinWidget = onPinWidget,
                     unreadNotificationsCount = unreadNotificationsCount,
                     onOpenNotifications = onOpenNotifications,
                     isDarkTheme = isDarkTheme,
@@ -275,152 +309,6 @@ fun MarketScreen(
                 }
             }
 
-            // Search Bar & Sort Dropdown Row
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Sort Button
-                    Box {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(SurfaceCard)
-                                .border(1.dp, SurfaceCardBorder, RoundedCornerShape(14.dp))
-                                .clickable { sortMenuExpanded = true }
-                                .testTag("sort_filter_button"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FilterList,
-                                contentDescription = "فیلتر و مرتب‌سازی",
-                                tint = if (uiState.sortOrder != SortOrder.DEFAULT) FintechCyan else TextSecondary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = sortMenuExpanded,
-                            onDismissRequest = { sortMenuExpanded = false },
-                            modifier = Modifier.background(SurfaceCard)
-                        ) {
-                            SortOrder.values().forEach { order ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = order.titleFa,
-                                            color = if (uiState.sortOrder == order) FintechCyan else TextPrimary,
-                                            fontWeight = if (uiState.sortOrder == order) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    },
-                                    onClick = {
-                                        onSortOrderChange(order)
-                                        sortMenuExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Search Field
-                    OutlinedTextField(
-                        value = uiState.searchQuery,
-                        onValueChange = onSearchQueryChange,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("market_search_input"),
-                        placeholder = {
-                            Text(
-                                text = "جستجو (دلار، تتر، بیت‌کوین، سکه، طلا...)",
-                                color = TextMuted,
-                                fontSize = 12.sp,
-                                textAlign = TextAlign.End,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        },
-                        leadingIcon = {
-                            if (uiState.searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { onSearchQueryChange("") }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "پاک کردن", tint = TextMuted)
-                                }
-                            }
-                        },
-                        trailingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = "جستجو", tint = TextMuted)
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = SurfaceCard,
-                            unfocusedContainerColor = SurfaceCard,
-                            focusedBorderColor = FintechCyan,
-                            unfocusedBorderColor = SurfaceCardBorder,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
-                        )
-                    )
-                }
-            }
-
-            // Categories Filter Chips Row
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val categories = listOf(
-                        AssetType.ALL,
-                        AssetType.DOLLAR_FIAT,
-                        AssetType.CRYPTO,
-                        AssetType.GOLD,
-                        AssetType.WATCHLIST
-                    )
-
-                    categories.forEach { cat ->
-                        val isSelected = uiState.selectedCategory == cat
-                        val chipBg = if (isSelected) FintechCyan.copy(alpha = 0.15f) else SurfaceCard
-                        val chipBorder = if (isSelected) FintechCyan else SurfaceCardBorder
-                        val chipTextColor = if (isSelected) FintechCyan else TextSecondary
-
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(chipBg)
-                                .border(1.dp, chipBorder, RoundedCornerShape(12.dp))
-                                .clickable { onSelectCategory(cat) }
-                                .padding(horizontal = 14.dp, vertical = 8.dp)
-                                .testTag("cat_chip_${cat.name}")
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (cat == AssetType.WATCHLIST) {
-                                    Icon(
-                                        imageVector = Icons.Default.Star,
-                                        contentDescription = null,
-                                        tint = if (isSelected) FintechGold else TextMuted,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                }
-                                Text(
-                                    text = cat.titleFa,
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        fontSize = 12.5.sp
-                                    ),
-                                    color = chipTextColor
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
             // Current Active Sort / Filter Tag (if applicable)
             if (uiState.sortOrder != SortOrder.DEFAULT) {
                 item {
@@ -512,47 +400,57 @@ fun MarketScreen(
             }
         }
 
-        // Animated Scroll Down & Blur Effect
-        ScrollDownBlurEffect(
+        // Dynamic Motion Blur Effect (Replaced scroll down button)
+        ScrollMotionBlurEffect(
             listState = listState,
-            bottomPadding = 90.dp
+            bottomPadding = 20.dp
         )
+    }
 
-        // Selected Asset Detail BottomSheet
-        if (uiState.selectedDetailItem != null) {
-            AssetDetailSheet(
-                item = uiState.selectedDetailItem,
-                sheetState = sheetState,
-                onDismiss = onCloseDetail,
-                onToggleFavorite = onToggleFavorite,
-                onSetAlert = onSetAlert,
-                onOpenConverter = onOpenConverter,
-                onSelectSource = { source ->
-                    onSelectAssetSource(uiState.selectedDetailItem.id, source)
-                },
-                customAlerts = customAlerts,
-                onOpenCustomAlert = {
-                    itemForCustomAlert = uiState.selectedDetailItem
-                },
-                onDeleteCustomAlert = onDeleteCustomAlert,
-                onToggleCustomAlert = onToggleCustomAlert
-            )
-        }
+    // 3. Google Auth & Firestore Sync Bar Docked at Bottom
+    GoogleAuthBottomBar(
+        currentUser = currentUser,
+        isLoading = isAuthLoading,
+        syncState = syncState,
+        onSignInGoogle = onSignInGoogle,
+        onSignOut = onSignOut
+    )
+}
 
-        // Custom Firebase Price Alert Sheet (FCM Push Configuration)
-        if (itemForCustomAlert != null) {
-            CustomPriceAlertSheet(
-                item = itemForCustomAlert!!,
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                onDismiss = { itemForCustomAlert = null },
-                onSaveAlert = { alert ->
-                    onSaveCustomAlert(alert)
-                    itemForCustomAlert = null
-                },
-                onTestNotification = { alert ->
-                    onTestCustomAlert(alert)
-                }
-            )
-        }
+    // Selected Asset Detail BottomSheet
+    if (uiState.selectedDetailItem != null) {
+        AssetDetailSheet(
+            item = uiState.selectedDetailItem,
+            sheetState = sheetState,
+            onDismiss = onCloseDetail,
+            onToggleFavorite = onToggleFavorite,
+            onSetAlert = onSetAlert,
+            onOpenConverter = onOpenConverter,
+            onSelectSource = { source ->
+                onSelectAssetSource(uiState.selectedDetailItem.id, source)
+            },
+            customAlerts = customAlerts,
+            onOpenCustomAlert = {
+                itemForCustomAlert = uiState.selectedDetailItem
+            },
+            onDeleteCustomAlert = onDeleteCustomAlert,
+            onToggleCustomAlert = onToggleCustomAlert
+        )
+    }
+
+    // Custom Firebase Price Alert Sheet (FCM Push Configuration)
+    if (itemForCustomAlert != null) {
+        CustomPriceAlertSheet(
+            item = itemForCustomAlert!!,
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            onDismiss = { itemForCustomAlert = null },
+            onSaveAlert = { alert ->
+                onSaveCustomAlert(alert)
+                itemForCustomAlert = null
+            },
+            onTestNotification = { alert ->
+                onTestCustomAlert(alert)
+            }
+        )
     }
 }

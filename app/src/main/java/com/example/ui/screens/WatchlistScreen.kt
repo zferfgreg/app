@@ -37,6 +37,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +52,9 @@ import com.example.data.model.ExchangeItem
 import com.example.ui.components.AssetIconBadge
 import com.example.ui.components.ExchangeItemCard
 import com.example.ui.components.ScrollDownBlurEffect
+import com.example.ui.components.ScrollMotionBlurEffect
+import com.example.ui.components.rememberScrollVelocity
+import com.example.ui.components.scrollMotionBlur
 import com.example.ui.components.WatchedAssetsHeatmap
 import com.example.ui.theme.AppTheme
 import com.example.ui.theme.DarkBg
@@ -81,6 +85,7 @@ fun WatchlistScreen(
 ) {
     val colors = AppTheme.colors
     val listState = rememberLazyListState()
+    val motionVelocity by rememberScrollVelocity(listState)
     val favoriteItems = items.filter { it.isFavorite }
     val alertItems = items.filter { it.alertPriceToman != null }
 
@@ -91,7 +96,9 @@ fun WatchlistScreen(
     ) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .scrollMotionBlur(motionVelocity),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -444,8 +451,8 @@ fun WatchlistScreen(
         }
     }
 
-    // Animated Scroll Down & Blur Effect
-    ScrollDownBlurEffect(
+    // Dynamic Motion Blur Effect (Replaced scroll down button)
+    ScrollMotionBlurEffect(
         listState = listState,
         bottomPadding = 90.dp
     )

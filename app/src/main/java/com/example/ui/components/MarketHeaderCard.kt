@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -67,6 +68,7 @@ fun MarketHeaderCard(
     items: List<ExchangeItem>,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
+    onPinWidget: () -> Unit = {},
     unreadNotificationsCount: Int = 0,
     onOpenNotifications: () -> Unit = {},
     isDarkTheme: Boolean = true,
@@ -222,7 +224,25 @@ fun MarketHeaderCard(
                             }
                         }
 
-                        // 4. Refresh button
+                        // 4. Pin Home Screen Widget button
+                        IconButton(
+                            onClick = onPinWidget,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(colors.surfaceLight.copy(alpha = 0.9f))
+                                .border(1.dp, colors.surfaceBorder, CircleShape)
+                                .testTag("pin_widget_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Widgets,
+                                contentDescription = "ویجت صفحه اصلی",
+                                tint = FintechGold,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        // 5. Refresh button
                         IconButton(
                             onClick = onRefresh,
                             modifier = Modifier

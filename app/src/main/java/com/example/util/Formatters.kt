@@ -44,4 +44,6 @@ object Formatters {
             else -> String.format(Locale.US, "%.2f", value)
         }
     }
+
+    fun formatCompact(value: Long): String = formatCompactNumber(value.toDouble())
 }
