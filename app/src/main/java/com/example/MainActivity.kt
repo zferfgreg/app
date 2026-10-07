@@ -4,12 +4,20 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Widgets
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
@@ -29,6 +37,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -156,6 +165,7 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
 
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    var showWidgetSelectDialog by remember { mutableStateOf(false) }
 
     // Request Android 13+ runtime POST_NOTIFICATIONS permission
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -310,12 +320,7 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                         onDeleteCustomAlert = { viewModel.deletePriceAlert(it) },
                         onToggleCustomAlert = { id, enabled -> viewModel.togglePriceAlert(id, enabled) },
                         onTestCustomAlert = { viewModel.testPriceAlertPush(it) },
-                        currentUser = currentUser,
-                        isAuthLoading = isAuthLoading,
-                        syncState = syncState,
-                        onSignInGoogle = { viewModel.signInWithGoogle(context) },
-                        onSignOut = { viewModel.signOut() },
-                        onPinWidget = { viewModel.requestPinAppWidget(context) }
+                        onPinWidget = { showWidgetSelectDialog = true }
                     )
                 }
 
@@ -378,6 +383,193 @@ fun MainAppScreen(viewModel: ExchangeViewModel) {
                             type = NotificationType.VOLATILITY
                         )
                     )
+                }
+            )
+        }
+
+        // Widget Selection Dialog (Dedicated Dollar Widget vs 4-Asset Market Widget)
+        if (showWidgetSelectDialog) {
+            AlertDialog(
+                onDismissRequest = { showWidgetSelectDialog = false },
+                containerColor = colors.surface,
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Widgets,
+                            contentDescription = null,
+                            tint = FintechGold,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = "انتخاب ویجت صفحه اصلی",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = colors.textPrimary
+                        )
+                    }
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "کدام ویجت را می‌خواهید به صفحه اصلی گوشی اضافه کنید؟",
+                            fontSize = 12.5.sp,
+                            color = colors.textSecondary
+                        )
+
+                        // 1. Dedicated Dollar Widget
+                        Card(
+                            onClick = {
+                                val success = viewModel.requestPinDollarWidget(context)
+                                if (!success) {
+                                    Toast.makeText(context, "از طریق منوی ویجت‌های گوشی نیز می‌توانید ویجت دلار را اضافه کنید", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "درخواست پین شدن ویجت اختصاصی دلار ارسال شد", Toast.LENGTH_SHORT).show()
+                                }
+                                showWidgetSelectDialog = false
+                            },
+                            colors = CardDefaults.cardColors(containerColor = colors.surfaceLight),
+                            border = BorderStroke(1.dp, FintechCyan.copy(alpha = 0.6f)),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = null,
+                                    tint = FintechCyan,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "ویجت اختصاصی دلار آمریکا (USD)",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = colors.textPrimary
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(text = "💵", fontSize = 16.sp)
+                                    }
+                                    Text(
+                                        text = "نرخ زنده ۲۶۳,۰۷۰ تومان • سقف/کف ۲۴ساعته • نرخ تتر",
+                                        fontSize = 10.5.sp,
+                                        color = FintechCyan
+                                    )
+                                }
+                            }
+                        }
+
+                        // 2. Dedicated Gold & Coin Widget
+                        Card(
+                            onClick = {
+                                val success = viewModel.requestPinGoldWidget(context)
+                                if (!success) {
+                                    Toast.makeText(context, "از طریق منوی ویجت‌های گوشی نیز می‌توانید ویجت طلا و سکه را اضافه کنید", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "درخواست پین شدن ویجت طلا و سکه ارسال شد", Toast.LENGTH_SHORT).show()
+                                }
+                                showWidgetSelectDialog = false
+                            },
+                            colors = CardDefaults.cardColors(containerColor = colors.surfaceLight),
+                            border = BorderStroke(1.dp, FintechGold.copy(alpha = 0.7f)),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = null,
+                                    tint = FintechGold,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "ویجت اختصاصی طلا و سکه (Gold)",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = colors.textPrimary
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(text = "🪙", fontSize = 16.sp)
+                                    }
+                                    Text(
+                                        text = "طلای ۱۸ عیار ۲۶,۲۰۰,۶۰۰ ت • سکه امامی • انس طلا",
+                                        fontSize = 10.5.sp,
+                                        color = FintechGold
+                                    )
+                                }
+                            }
+                        }
+
+                        // 3. 4-Asset Market Widget
+                        Card(
+                            onClick = {
+                                val success = viewModel.requestPinAppWidget(context)
+                                if (!success) {
+                                    Toast.makeText(context, "از طریق منوی ویجت‌های گوشی نیز می‌توانید ویجت بازار را اضافه کنید", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "درخواست پین شدن ویجت بازار ارسال شد", Toast.LENGTH_SHORT).show()
+                                }
+                                showWidgetSelectDialog = false
+                            },
+                            colors = CardDefaults.cardColors(containerColor = colors.surfaceLight),
+                            border = BorderStroke(1.dp, colors.surfaceBorder),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = null,
+                                    tint = FintechGold,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "ویجت جامع بازار (۴ دارایی)",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = colors.textPrimary
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(text = "💎", fontSize = 16.sp)
+                                    }
+                                    Text(
+                                        text = "دلار آمریکا، طلای ۱۸ عیار، سکه امامی و کریپتو",
+                                        fontSize = 10.5.sp,
+                                        color = colors.textMuted
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showWidgetSelectDialog = false }) {
+                        Text("بستن", color = colors.textSecondary)
+                    }
                 }
             )
         }

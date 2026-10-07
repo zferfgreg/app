@@ -22,6 +22,8 @@ import com.example.service.FirestoreSyncManager
 import com.example.service.SyncState
 import com.example.service.UserProfile
 import com.example.util.NotificationHelper
+import com.example.widget.DollarAppWidgetProvider
+import com.example.widget.GoldAppWidgetProvider
 import com.example.widget.MarketAppWidgetProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -444,12 +446,22 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
                 marketSentiment.value = GeminiService.calculateMarketSentiment(currentItems, groundedNews.value)
                 fetchGroundedNews()
                 MarketAppWidgetProvider.updateAllWidgets(getApplication())
+                DollarAppWidgetProvider.updateAllDollarWidgets(getApplication())
+                GoldAppWidgetProvider.updateAllGoldWidgets(getApplication())
             }
         }
     }
 
     fun requestPinAppWidget(context: Context): Boolean {
         return MarketAppWidgetProvider.requestPinWidget(context)
+    }
+
+    fun requestPinDollarWidget(context: Context): Boolean {
+        return DollarAppWidgetProvider.requestPinDollarWidget(context)
+    }
+
+    fun requestPinGoldWidget(context: Context): Boolean {
+        return GoldAppWidgetProvider.requestPinGoldWidget(context)
     }
 
     fun saveCustomPriceAlert(alert: PriceAlertEntity) {

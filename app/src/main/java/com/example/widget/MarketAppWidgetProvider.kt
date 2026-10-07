@@ -61,6 +61,9 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
                 for (widgetId in allWidgetIds) {
                     updateAppWidget(context, appWidgetManager, widgetId)
                 }
+                // Also update dedicated dollar and gold widgets
+                DollarAppWidgetProvider.updateAllDollarWidgets(context)
+                GoldAppWidgetProvider.updateAllGoldWidgets(context)
             } catch (e: Exception) {
                 // ignore
             }
@@ -146,21 +149,21 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widget_btn_refresh, refreshPendingIntent)
 
-            // Populate baseline initial numbers so all views are bound immediately
-            views.setTextViewText(R.id.widget_price_usd, "۹۴,۸۰۰ تومان")
-            views.setTextViewText(R.id.widget_change_usd, "+۱.۲٪")
+            // Populate baseline initial numbers so all views are bound immediately with accurate prices
+            views.setTextViewText(R.id.widget_price_usd, "۲۶۳,۰۷۰ تومان")
+            views.setTextViewText(R.id.widget_change_usd, "+۲.۱۹٪")
             views.setTextColor(R.id.widget_change_usd, Color.parseColor("#00E676"))
 
-            views.setTextViewText(R.id.widget_price_gold, "۲۵,۶۹۴,۴۰۰ تومان")
-            views.setTextViewText(R.id.widget_change_gold, "+۰.۸٪")
-            views.setTextColor(R.id.widget_change_gold, Color.parseColor("#00E676"))
+            views.setTextViewText(R.id.widget_price_gold, "۲۶,۲۰۰,۶۰۰ تومان")
+            views.setTextViewText(R.id.widget_change_gold, "-۲.۰۵٪")
+            views.setTextColor(R.id.widget_change_gold, Color.parseColor("#FF5252"))
 
-            views.setTextViewText(R.id.widget_price_coin, "۳۰۴,۵۰۰,۰۰۰ تومان")
-            views.setTextViewText(R.id.widget_change_coin, "+۱.۵٪")
-            views.setTextColor(R.id.widget_change_coin, Color.parseColor("#00E676"))
+            views.setTextViewText(R.id.widget_price_coin, "۲۶۷,۳۶۵,۰۰۰ تومان")
+            views.setTextViewText(R.id.widget_change_coin, "-۱.۷۰٪")
+            views.setTextColor(R.id.widget_change_coin, Color.parseColor("#FF5252"))
 
-            views.setTextViewText(R.id.widget_price_crypto, "۹۵,۱۰۰ ت | $۸۵K")
-            views.setTextViewText(R.id.widget_change_crypto, "+۲.۱٪")
+            views.setTextViewText(R.id.widget_price_crypto, "۲۶۳,۵۰۰ ت | $۸۳K")
+            views.setTextViewText(R.id.widget_change_crypto, "+۱.۲۵٪")
             views.setTextColor(R.id.widget_change_crypto, Color.parseColor("#00E676"))
 
             return views
@@ -177,8 +180,8 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
             val btc = items.find { it.id == "BTC" }
 
             // USD Row
-            val usdPrice = usd?.priceToman ?: 94800L
-            val usdChange = usd?.changePercent24h ?: 1.2
+            val usdPrice = usd?.priceToman ?: 263070L
+            val usdChange = usd?.changePercent24h ?: 2.19
             views.setTextViewText(R.id.widget_price_usd, Formatters.formatToman(usdPrice))
             views.setTextViewText(R.id.widget_change_usd, Formatters.formatPercent(usdChange))
             views.setTextColor(
@@ -187,8 +190,8 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
             )
 
             // Gold Row
-            val goldPrice = gold?.priceToman ?: 25694400L
-            val goldChange = gold?.changePercent24h ?: 0.8
+            val goldPrice = gold?.priceToman ?: 26200600L
+            val goldChange = gold?.changePercent24h ?: -2.05
             views.setTextViewText(R.id.widget_price_gold, Formatters.formatToman(goldPrice))
             views.setTextViewText(R.id.widget_change_gold, Formatters.formatPercent(goldChange))
             views.setTextColor(
@@ -197,8 +200,8 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
             )
 
             // Coin Row
-            val coinPrice = coin?.priceToman ?: 304500000L
-            val coinChange = coin?.changePercent24h ?: 1.5
+            val coinPrice = coin?.priceToman ?: 267365000L
+            val coinChange = coin?.changePercent24h ?: -1.70
             views.setTextViewText(R.id.widget_price_coin, Formatters.formatToman(coinPrice))
             views.setTextViewText(R.id.widget_change_coin, Formatters.formatPercent(coinChange))
             views.setTextColor(
@@ -207,9 +210,9 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
             )
 
             // Crypto Row (USDT & BTC)
-            val usdtPrice = usdt?.priceToman ?: 95100L
-            val btcUsd = btc?.priceUsd ?: 85000.0
-            val cryptoChange = usdt?.changePercent24h ?: 0.9
+            val usdtPrice = usdt?.priceToman ?: 263500L
+            val btcUsd = btc?.priceUsd ?: 83356.0
+            val cryptoChange = usdt?.changePercent24h ?: 1.25
             views.setTextViewText(
                 R.id.widget_price_crypto,
                 "${Formatters.formatToman(usdtPrice)} | $${Formatters.formatCompact(btcUsd.toLong())}"

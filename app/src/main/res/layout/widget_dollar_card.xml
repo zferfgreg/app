@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/dollar_widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Header Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Refresh Button -->
+        <ImageView
+            android:id="@+id/dollar_widget_btn_refresh"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:padding="3dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="بروزرسانی نرخ دلار"
+            android:src="@drawable/ic_widget_refresh" />
+
+        <!-- Timestamp -->
+        <TextView
+            android:id="@+id/dollar_widget_last_updated"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:text="بروزرسانی: لحظاتی پیش"
+            android:textColor="#8C9BB4"
+            android:textSize="10sp" />
+
+        <!-- Asset Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💵 دلار آمریکا (آزاد)"
+            android:textColor="#00E5FF"
+            android:textSize="12.5sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Divider Line -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="6dp"
+        android:background="#262D3E"
+        android:src="@android:color/transparent" />
+
+    <!-- Big Price & Change Block -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- 24h Change Badge -->
+            <TextView
+                android:id="@+id/dollar_widget_change"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/widget_item_bg"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="+۱.۴۵٪"
+                android:textColor="#00E676"
+                android:textSize="11.5sp"
+                android:textStyle="bold" />
+
+            <!-- Main Live Dollar Price -->
+            <TextView
+                android:id="@+id/dollar_widget_price"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="right|end"
+                android:text="۲۵۸,۴۶۵ تومان"
+                android:textColor="#FFFFFF"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Secondary Information Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/widget_item_bg"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/dollar_widget_usdt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="تتر: ۲۵۹,۰۰۰ ت"
+                android:textColor="#00E5FF"
+                android:textSize="10.5sp" />
+
+            <TextView
+                android:id="@+id/dollar_widget_range"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="right|end"
+                android:text="سقف: ۲۵۸,۵۲۰ | کف: ۲۵۴,۶۶۰"
+                android:textColor="#A0ADC2"
+                android:textSize="10.5sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

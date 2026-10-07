@@ -41,6 +41,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,10 +63,10 @@ import com.example.data.model.MarketSentimentData
 import com.example.data.model.PriceSource
 import com.example.service.SyncState
 import com.example.service.UserProfile
+import com.example.ui.components.AnimatedFintechBackground
 import com.example.ui.components.AssetDetailSheet
 import com.example.ui.components.CustomPriceAlertSheet
 import com.example.ui.components.ExchangeItemCard
-import com.example.ui.components.GoogleAuthBottomBar
 import com.example.ui.components.GroundedNewsSection
 import com.example.ui.components.MarketHeaderCard
 import com.example.ui.components.MarketSentimentSection
@@ -138,14 +139,26 @@ fun MarketScreen(
     val colors = AppTheme.colors
     val listState = rememberLazyListState()
     val motionVelocity by rememberScrollVelocity(listState)
+    val scrollOffset by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex * 300f + listState.firstVisibleItemScrollOffset
+        }
+    }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var itemForCustomAlert by remember { mutableStateOf<ExchangeItem?>(null) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.bg)
+    AnimatedFintechBackground(
+        isDarkTheme = isDarkTheme,
+        isAnimationEnabled = isAnimationEnabled,
+        scrollOffset = scrollOffset,
+        scrollVelocity = motionVelocity,
+        modifier = modifier.fillMaxSize()
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Transparent)
+        ) {
         // 1. Persistent Search Header with Real-Time Auto-Complete
         PersistentSearchHeader(
             searchQuery = uiState.searchQuery,
@@ -406,15 +419,7 @@ fun MarketScreen(
             bottomPadding = 20.dp
         )
     }
-
-    // 3. Google Auth & Firestore Sync Bar Docked at Bottom
-    GoogleAuthBottomBar(
-        currentUser = currentUser,
-        isLoading = isAuthLoading,
-        syncState = syncState,
-        onSignInGoogle = onSignInGoogle,
-        onSignOut = onSignOut
-    )
+}
 }
 
     // Selected Asset Detail BottomSheet
