@@ -11,16 +11,10 @@ import android.os.Build
 import android.widget.RemoteViews
 import com.example.MainActivity
 import com.example.R
-import com.example.data.local.AppDatabase
-import com.example.data.model.ExchangeItem
-import com.example.data.repository.ExchangeRepository
 import com.example.util.Formatters
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MarketAppWidgetProvider : AppWidgetProvider() {
 
@@ -38,13 +32,7 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
         super.onReceive(context, intent)
         if (intent.action == ACTION_REFRESH_WIDGET) {
             CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val db = AppDatabase.getDatabase(context)
-                    val repo = ExchangeRepository(db.watchlistDao(), db.priceAlertDao())
-                    repo.refreshRates()
-                } catch (e: Exception) {
-                    // ignore
-                }
+                WidgetRatesManager.fetchAndStoreLiveRates(context)
                 updateAllWidgets(context)
             }
         }
@@ -61,7 +49,6 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
                 for (widgetId in allWidgetIds) {
                     updateAppWidget(context, appWidgetManager, widgetId)
                 }
-                // Also update dedicated dollar and gold widgets
                 DollarAppWidgetProvider.updateAllDollarWidgets(context)
                 GoldAppWidgetProvider.updateAllGoldWidgets(context)
             } catch (e: Exception) {
@@ -96,20 +83,17 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
             appWidgetId: Int
         ) {
             try {
-                val views = buildBaseRemoteViews(context)
-                // 1. Immediately apply base views so launcher never displays "Can't load widget"
+                // 1. Immediately apply latest stored rates so widget is instantaneous
+                val initialRates = WidgetRatesManager.getRates(context)
+                val views = buildRemoteViews(context, initialRates)
                 appWidgetManager.updateAppWidget(appWidgetId, views)
 
-                // 2. Asynchronously load latest live rates from Room/Repository and update
+                // 2. Asynchronously fetch fresh live rates from TGJU/API and update
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val db = AppDatabase.getDatabase(context)
-                        val repo = ExchangeRepository(db.watchlistDao(), db.priceAlertDao())
-                        val items = repo.getCurrentItems()
-                        if (items.isNotEmpty()) {
-                            populateViewsWithItems(views, items)
-                            appWidgetManager.updateAppWidget(appWidgetId, views)
-                        }
+                        val liveRates = WidgetRatesManager.fetchAndStoreLiveRates(context)
+                        val updatedViews = buildRemoteViews(context, liveRates)
+                        appWidgetManager.updateAppWidget(appWidgetId, updatedViews)
                     } catch (e: Exception) {
                         // ignore
                     }
@@ -119,13 +103,11 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        private fun buildBaseRemoteViews(context: Context): RemoteViews {
+        private fun buildRemoteViews(context: Context, rates: WidgetRates): RemoteViews {
             val views = RemoteViews(context.packageName, R.layout.widget_market_card)
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            val timeString = "بروزرسانی: ${timeFormat.format(Date())}"
-            views.setTextViewText(R.id.widget_last_updated, timeString)
+            views.setTextViewText(R.id.widget_last_updated, "بروزرسانی: ${rates.lastUpdated}")
 
-            // Intent to open app on clicking widget background
+            // Intent to open app
             val openAppIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
@@ -149,79 +131,42 @@ class MarketAppWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widget_btn_refresh, refreshPendingIntent)
 
-            // Populate baseline initial numbers so all views are bound immediately with accurate prices
-            views.setTextViewText(R.id.widget_price_usd, "۲۶۳,۰۷۰ تومان")
-            views.setTextViewText(R.id.widget_change_usd, "+۲.۱۹٪")
-            views.setTextColor(R.id.widget_change_usd, Color.parseColor("#00E676"))
-
-            views.setTextViewText(R.id.widget_price_gold, "۲۶,۲۰۰,۶۰۰ تومان")
-            views.setTextViewText(R.id.widget_change_gold, "-۲.۰۵٪")
-            views.setTextColor(R.id.widget_change_gold, Color.parseColor("#FF5252"))
-
-            views.setTextViewText(R.id.widget_price_coin, "۲۶۷,۳۶۵,۰۰۰ تومان")
-            views.setTextViewText(R.id.widget_change_coin, "-۱.۷۰٪")
-            views.setTextColor(R.id.widget_change_coin, Color.parseColor("#FF5252"))
-
-            views.setTextViewText(R.id.widget_price_crypto, "۲۶۳,۵۰۰ ت | $۸۳K")
-            views.setTextViewText(R.id.widget_change_crypto, "+۱.۲۵٪")
-            views.setTextColor(R.id.widget_change_crypto, Color.parseColor("#00E676"))
-
-            return views
-        }
-
-        private fun populateViewsWithItems(views: RemoteViews, items: List<ExchangeItem>) {
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            views.setTextViewText(R.id.widget_last_updated, "بروزرسانی: ${timeFormat.format(Date())}")
-
-            val usd = items.find { it.id == "USD" }
-            val gold = items.find { it.id == "GOLD_18K" }
-            val coin = items.find { it.id == "SEKKE_EMAMI" }
-            val usdt = items.find { it.id == "USDT" }
-            val btc = items.find { it.id == "BTC" }
-
-            // USD Row
-            val usdPrice = usd?.priceToman ?: 263070L
-            val usdChange = usd?.changePercent24h ?: 2.19
-            views.setTextViewText(R.id.widget_price_usd, Formatters.formatToman(usdPrice))
-            views.setTextViewText(R.id.widget_change_usd, Formatters.formatPercent(usdChange))
+            // 1. USD Row
+            views.setTextViewText(R.id.widget_price_usd, Formatters.formatToman(rates.usdPrice))
+            views.setTextViewText(R.id.widget_change_usd, Formatters.formatPercent(rates.usdChange))
             views.setTextColor(
                 R.id.widget_change_usd,
-                if (usdChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
+                if (rates.usdChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
             )
 
-            // Gold Row
-            val goldPrice = gold?.priceToman ?: 26200600L
-            val goldChange = gold?.changePercent24h ?: -2.05
-            views.setTextViewText(R.id.widget_price_gold, Formatters.formatToman(goldPrice))
-            views.setTextViewText(R.id.widget_change_gold, Formatters.formatPercent(goldChange))
+            // 2. Gold Row
+            views.setTextViewText(R.id.widget_price_gold, Formatters.formatToman(rates.goldPrice))
+            views.setTextViewText(R.id.widget_change_gold, Formatters.formatPercent(rates.goldChange))
             views.setTextColor(
                 R.id.widget_change_gold,
-                if (goldChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
+                if (rates.goldChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
             )
 
-            // Coin Row
-            val coinPrice = coin?.priceToman ?: 267365000L
-            val coinChange = coin?.changePercent24h ?: -1.70
-            views.setTextViewText(R.id.widget_price_coin, Formatters.formatToman(coinPrice))
-            views.setTextViewText(R.id.widget_change_coin, Formatters.formatPercent(coinChange))
+            // 3. Coin Row
+            views.setTextViewText(R.id.widget_price_coin, Formatters.formatToman(rates.coinPrice))
+            views.setTextViewText(R.id.widget_change_coin, Formatters.formatPercent(rates.coinChange))
             views.setTextColor(
                 R.id.widget_change_coin,
-                if (coinChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
+                if (rates.coinChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
             )
 
-            // Crypto Row (USDT & BTC)
-            val usdtPrice = usdt?.priceToman ?: 263500L
-            val btcUsd = btc?.priceUsd ?: 83356.0
-            val cryptoChange = usdt?.changePercent24h ?: 1.25
+            // 4. Crypto Row
             views.setTextViewText(
                 R.id.widget_price_crypto,
-                "${Formatters.formatToman(usdtPrice)} | $${Formatters.formatCompact(btcUsd.toLong())}"
+                "${Formatters.formatToman(rates.usdtPrice)} | $${Formatters.formatCompact(rates.btcUsd.toLong())}"
             )
-            views.setTextViewText(R.id.widget_change_crypto, Formatters.formatPercent(cryptoChange))
+            views.setTextViewText(R.id.widget_change_crypto, Formatters.formatPercent(rates.usdtChange))
             views.setTextColor(
                 R.id.widget_change_crypto,
-                if (cryptoChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
+                if (rates.usdtChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
             )
+
+            return views
         }
     }
 }

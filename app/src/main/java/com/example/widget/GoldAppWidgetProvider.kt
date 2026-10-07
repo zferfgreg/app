@@ -11,15 +11,10 @@ import android.os.Build
 import android.widget.RemoteViews
 import com.example.MainActivity
 import com.example.R
-import com.example.data.local.AppDatabase
-import com.example.data.model.ExchangeItem
-import com.example.data.repository.ExchangeRepository
 import com.example.util.Formatters
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 class GoldAppWidgetProvider : AppWidgetProvider() {
@@ -38,13 +33,7 @@ class GoldAppWidgetProvider : AppWidgetProvider() {
         super.onReceive(context, intent)
         if (intent.action == ACTION_REFRESH_GOLD_WIDGET) {
             CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val db = AppDatabase.getDatabase(context)
-                    val repo = ExchangeRepository(db.watchlistDao(), db.priceAlertDao())
-                    repo.refreshRates()
-                } catch (e: Exception) {
-                    // ignore
-                }
+                WidgetRatesManager.fetchAndStoreLiveRates(context)
                 updateAllGoldWidgets(context)
             }
         }
@@ -93,18 +82,15 @@ class GoldAppWidgetProvider : AppWidgetProvider() {
             appWidgetId: Int
         ) {
             try {
-                val views = buildBaseRemoteViews(context)
+                val initialRates = WidgetRatesManager.getRates(context)
+                val views = buildRemoteViews(context, initialRates)
                 appWidgetManager.updateAppWidget(appWidgetId, views)
 
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val db = AppDatabase.getDatabase(context)
-                        val repo = ExchangeRepository(db.watchlistDao(), db.priceAlertDao())
-                        val items = repo.getCurrentItems()
-                        if (items.isNotEmpty()) {
-                            populateViewsWithItems(views, items)
-                            appWidgetManager.updateAppWidget(appWidgetId, views)
-                        }
+                        val liveRates = WidgetRatesManager.fetchAndStoreLiveRates(context)
+                        val updatedViews = buildRemoteViews(context, liveRates)
+                        appWidgetManager.updateAppWidget(appWidgetId, updatedViews)
                     } catch (e: Exception) {
                         // ignore
                     }
@@ -114,11 +100,9 @@ class GoldAppWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        private fun buildBaseRemoteViews(context: Context): RemoteViews {
+        private fun buildRemoteViews(context: Context, rates: WidgetRates): RemoteViews {
             val views = RemoteViews(context.packageName, R.layout.widget_gold_card)
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            val timeString = "بروزرسانی: ${timeFormat.format(Date())}"
-            views.setTextViewText(R.id.gold_widget_last_updated, timeString)
+            views.setTextViewText(R.id.gold_widget_last_updated, "بروزرسانی: ${rates.lastUpdated}")
 
             // Intent to open app
             val openAppIntent = Intent(context, MainActivity::class.java).apply {
@@ -144,50 +128,27 @@ class GoldAppWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.gold_widget_btn_refresh, refreshPendingIntent)
 
-            // Live baseline prices
-            views.setTextViewText(R.id.gold_widget_price, "۲۶,۲۰۰,۶۰۰ تومان")
-            views.setTextViewText(R.id.gold_widget_change, "-۲.۰۵٪")
-            views.setTextColor(R.id.gold_widget_change, Color.parseColor("#FF5252"))
-            views.setTextViewText(R.id.gold_widget_coin, "سکه امامی: ۲۶۷,۳۶۵,۰۰۰ ت")
-            views.setTextViewText(R.id.gold_widget_ounce, "انس: $۴,۰۸۵")
-            views.setTextViewText(R.id.gold_widget_range, "سقف: ۲۶,۷۴۰,۰۰۰ | کف: ۲۶,۱۳۰,۰۰۰")
-
-            return views
-        }
-
-        private fun populateViewsWithItems(views: RemoteViews, items: List<ExchangeItem>) {
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            views.setTextViewText(R.id.gold_widget_last_updated, "بروزرسانی: ${timeFormat.format(Date())}")
-
-            val gold = items.find { it.id == "GOLD_18K" }
-            val coin = items.find { it.id == "SEKKE_EMAMI" }
-            val ounce = items.find { it.id == "OUNCE_GOLD" }
-
             // 1. Gold 18K
-            val goldPrice = gold?.priceToman ?: 26200600L
-            val goldChange = gold?.changePercent24h ?: -2.05
-            views.setTextViewText(R.id.gold_widget_price, Formatters.formatToman(goldPrice))
-            views.setTextViewText(R.id.gold_widget_change, Formatters.formatPercent(goldChange))
+            views.setTextViewText(R.id.gold_widget_price, Formatters.formatToman(rates.goldPrice))
+            views.setTextViewText(R.id.gold_widget_change, Formatters.formatPercent(rates.goldChange))
             views.setTextColor(
                 R.id.gold_widget_change,
-                if (goldChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
+                if (rates.goldChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
             )
 
             // 2. Emami Coin
-            val coinPrice = coin?.priceToman ?: 267365000L
-            views.setTextViewText(R.id.gold_widget_coin, "سکه امامی: ${Formatters.formatToman(coinPrice)}")
+            views.setTextViewText(R.id.gold_widget_coin, "سکه امامی: ${Formatters.formatToman(rates.coinPrice)}")
 
             // 3. Gold Ounce
-            val ounceUsd = ounce?.priceUsd ?: 4085.8
-            views.setTextViewText(R.id.gold_widget_ounce, "انس: $${String.format(Locale.US, "%,.0f", ounceUsd)}")
+            views.setTextViewText(R.id.gold_widget_ounce, "انس: $${String.format(Locale.US, "%,.0f", rates.ounceUsd)}")
 
             // 4. High / Low Range
-            if (gold != null && gold.high24hToman > 0 && gold.low24hToman > 0) {
-                views.setTextViewText(
-                    R.id.gold_widget_range,
-                    "سقف: ${Formatters.formatToman(gold.high24hToman)} | کف: ${Formatters.formatToman(gold.low24hToman)}"
-                )
-            }
+            views.setTextViewText(
+                R.id.gold_widget_range,
+                "سقف: ${Formatters.formatToman(rates.goldHigh)} | کف: ${Formatters.formatToman(rates.goldLow)}"
+            )
+
+            return views
         }
     }
 }

@@ -25,6 +25,7 @@ import com.example.util.NotificationHelper
 import com.example.widget.DollarAppWidgetProvider
 import com.example.widget.GoldAppWidgetProvider
 import com.example.widget.MarketAppWidgetProvider
+import com.example.widget.WidgetRatesManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -445,6 +446,7 @@ class ExchangeViewModel(application: Application) : AndroidViewModel(application
                 }
                 marketSentiment.value = GeminiService.calculateMarketSentiment(currentItems, groundedNews.value)
                 fetchGroundedNews()
+                WidgetRatesManager.saveRatesFromItems(getApplication(), currentItems)
                 MarketAppWidgetProvider.updateAllWidgets(getApplication())
                 DollarAppWidgetProvider.updateAllDollarWidgets(getApplication())
                 GoldAppWidgetProvider.updateAllGoldWidgets(getApplication())

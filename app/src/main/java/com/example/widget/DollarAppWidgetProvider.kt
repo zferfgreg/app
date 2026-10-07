@@ -11,16 +11,10 @@ import android.os.Build
 import android.widget.RemoteViews
 import com.example.MainActivity
 import com.example.R
-import com.example.data.local.AppDatabase
-import com.example.data.model.ExchangeItem
-import com.example.data.repository.ExchangeRepository
 import com.example.util.Formatters
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class DollarAppWidgetProvider : AppWidgetProvider() {
 
@@ -38,13 +32,7 @@ class DollarAppWidgetProvider : AppWidgetProvider() {
         super.onReceive(context, intent)
         if (intent.action == ACTION_REFRESH_DOLLAR_WIDGET) {
             CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val db = AppDatabase.getDatabase(context)
-                    val repo = ExchangeRepository(db.watchlistDao(), db.priceAlertDao())
-                    repo.refreshRates()
-                } catch (e: Exception) {
-                    // ignore
-                }
+                WidgetRatesManager.fetchAndStoreLiveRates(context)
                 updateAllDollarWidgets(context)
             }
         }
@@ -93,20 +81,15 @@ class DollarAppWidgetProvider : AppWidgetProvider() {
             appWidgetId: Int
         ) {
             try {
-                val views = buildBaseRemoteViews(context)
-                // 1. Immediately apply base views
+                val initialRates = WidgetRatesManager.getRates(context)
+                val views = buildRemoteViews(context, initialRates)
                 appWidgetManager.updateAppWidget(appWidgetId, views)
 
-                // 2. Asynchronously load latest live rates from Room/Repository and update
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val db = AppDatabase.getDatabase(context)
-                        val repo = ExchangeRepository(db.watchlistDao(), db.priceAlertDao())
-                        val items = repo.getCurrentItems()
-                        if (items.isNotEmpty()) {
-                            populateViewsWithItems(views, items)
-                            appWidgetManager.updateAppWidget(appWidgetId, views)
-                        }
+                        val liveRates = WidgetRatesManager.fetchAndStoreLiveRates(context)
+                        val updatedViews = buildRemoteViews(context, liveRates)
+                        appWidgetManager.updateAppWidget(appWidgetId, updatedViews)
                     } catch (e: Exception) {
                         // ignore
                     }
@@ -116,11 +99,9 @@ class DollarAppWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        private fun buildBaseRemoteViews(context: Context): RemoteViews {
+        private fun buildRemoteViews(context: Context, rates: WidgetRates): RemoteViews {
             val views = RemoteViews(context.packageName, R.layout.widget_dollar_card)
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            val timeString = "بروزرسانی: ${timeFormat.format(Date())}"
-            views.setTextViewText(R.id.dollar_widget_last_updated, timeString)
+            views.setTextViewText(R.id.dollar_widget_last_updated, "بروزرسانی: ${rates.lastUpdated}")
 
             // Intent to open app
             val openAppIntent = Intent(context, MainActivity::class.java).apply {
@@ -146,44 +127,24 @@ class DollarAppWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.dollar_widget_btn_refresh, refreshPendingIntent)
 
-            // Accurate baseline numbers matching current real prices
-            views.setTextViewText(R.id.dollar_widget_price, "۲۶۳,۰۷۰ تومان")
-            views.setTextViewText(R.id.dollar_widget_change, "+۲.۱۹٪")
-            views.setTextColor(R.id.dollar_widget_change, Color.parseColor("#00E676"))
-            views.setTextViewText(R.id.dollar_widget_usdt, "تتر: ۲۶۳,۵۰۰ ت")
-            views.setTextViewText(R.id.dollar_widget_range, "سقف: ۲۶۸,۵۰۰ | کف: ۲۶۱,۶۰۰")
-
-            return views
-        }
-
-        private fun populateViewsWithItems(views: RemoteViews, items: List<ExchangeItem>) {
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            views.setTextViewText(R.id.dollar_widget_last_updated, "بروزرسانی: ${timeFormat.format(Date())}")
-
-            val usd = items.find { it.id == "USD" }
-            val usdt = items.find { it.id == "USDT" }
-
-            val usdPrice = usd?.priceToman ?: 263070L
-            val usdChange = usd?.changePercent24h ?: 2.19
-            val highPrice = usd?.high24hToman ?: (usdPrice + 5430L)
-            val lowPrice = usd?.low24hToman ?: (usdPrice - 1470L)
-            val usdtPrice = usdt?.priceToman ?: 263500L
-
-            views.setTextViewText(R.id.dollar_widget_price, Formatters.formatToman(usdPrice))
-            views.setTextViewText(R.id.dollar_widget_change, Formatters.formatPercent(usdChange))
+            // Main Dollar details
+            views.setTextViewText(R.id.dollar_widget_price, Formatters.formatToman(rates.usdPrice))
+            views.setTextViewText(R.id.dollar_widget_change, Formatters.formatPercent(rates.usdChange))
             views.setTextColor(
                 R.id.dollar_widget_change,
-                if (usdChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
+                if (rates.usdChange >= 0) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
             )
 
             views.setTextViewText(
                 R.id.dollar_widget_usdt,
-                "تتر: ${Formatters.formatToman(usdtPrice)}"
+                "تتر: ${Formatters.formatToman(rates.usdtPrice)}"
             )
             views.setTextViewText(
                 R.id.dollar_widget_range,
-                "سقف: ${Formatters.formatToman(highPrice)} | کف: ${Formatters.formatToman(lowPrice)}"
+                "سقف: ${Formatters.formatToman(rates.usdHigh)} | کف: ${Formatters.formatToman(rates.usdLow)}"
             )
+
+            return views
         }
     }
 }

@@ -100,7 +100,7 @@ fun MarketHeaderCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .border(1.dp, colors.surfaceBorder, RoundedCornerShape(22.dp)),
-        colors = CardDefaults.cardColors(containerColor = colors.surface),
+        colors = CardDefaults.cardColors(containerColor = colors.surface.copy(alpha = 0.90f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {

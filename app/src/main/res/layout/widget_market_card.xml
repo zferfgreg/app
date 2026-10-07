@@ -83,7 +83,7 @@
                 android:id="@+id/widget_change_usd"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="+۱.۲٪"
+                android:text="+۲.۱٪"
                 android:textColor="#00E676"
                 android:textSize="10sp"
                 android:textStyle="bold" />
@@ -97,7 +97,7 @@
                 android:paddingRight="6dp"
                 android:paddingStart="6dp"
                 android:paddingEnd="6dp"
-                android:text="۹۴,۸۰۰ تومان"
+                android:text="۲۶۳,۲۰۰ تومان"
                 android:textColor="#FFFFFF"
                 android:textSize="11.5sp"
                 android:textStyle="bold" />
@@ -129,8 +129,8 @@
                 android:id="@+id/widget_change_gold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="+۰.۸٪"
-                android:textColor="#00E676"
+                android:text="-۲.۰٪"
+                android:textColor="#FF5252"
                 android:textSize="10sp"
                 android:textStyle="bold" />
 
@@ -143,7 +143,7 @@
                 android:paddingRight="6dp"
                 android:paddingStart="6dp"
                 android:paddingEnd="6dp"
-                android:text="۲۵,۶۹۴,۴۰۰ تومان"
+                android:text="۲۶,۲۰۰,۰۰۰ تومان"
                 android:textColor="#FFD700"
                 android:textSize="11.5sp"
                 android:textStyle="bold" />
@@ -175,8 +175,8 @@
                 android:id="@+id/widget_change_coin"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="+۱.۵٪"
-                android:textColor="#00E676"
+                android:text="-۱.۷٪"
+                android:textColor="#FF5252"
                 android:textSize="10sp"
                 android:textStyle="bold" />
 
@@ -189,7 +189,7 @@
                 android:paddingRight="6dp"
                 android:paddingStart="6dp"
                 android:paddingEnd="6dp"
-                android:text="۳۰۴,۵۰۰,۰۰۰ تومان"
+                android:text="۲۶۷,۲۵۰,۰۰۰ تومان"
                 android:textColor="#FFFFFF"
                 android:textSize="11.5sp"
                 android:textStyle="bold" />
@@ -220,7 +220,7 @@
                 android:id="@+id/widget_change_crypto"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="+۲.۱٪"
+                android:text="+۱.۲٪"
                 android:textColor="#00E676"
                 android:textSize="10sp"
                 android:textStyle="bold" />
@@ -234,7 +234,7 @@
                 android:paddingRight="6dp"
                 android:paddingStart="6dp"
                 android:paddingEnd="6dp"
-                android:text="۹۵,۱۰۰ ت | $۸۵K"
+                android:text="۲۶۴,۰۰۰ ت | $۸۳K"
                 android:textColor="#00E5FF"
                 android:textSize="11.5sp"
                 android:textStyle="bold" />

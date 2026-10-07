@@ -72,7 +72,7 @@ fun ExchangeItemCard(
             .border(1.dp, colors.surfaceBorder, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .testTag("exchange_card_${item.id}"),
-        colors = CardDefaults.cardColors(containerColor = colors.surface),
+        colors = CardDefaults.cardColors(containerColor = colors.surface.copy(alpha = 0.88f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(

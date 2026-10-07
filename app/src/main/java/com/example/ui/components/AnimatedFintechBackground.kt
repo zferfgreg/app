@@ -49,50 +49,51 @@ fun AnimatedFintechBackground(
 ) {
     val colors = AppTheme.colors
 
-    // 1. Infinite transition for ambient floating breathing effect
+    // Ambient breathing animations
     val infiniteTransition = rememberInfiniteTransition(label = "ambient_mesh")
 
     val pulsePhase by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 6.28318f, // 2 * PI
+        targetValue = 6.28318f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 14000, easing = LinearEasing),
+            animation = tween(durationMillis = 12000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "pulse_phase"
     )
 
-    val waveScroll by infiniteTransition.animateFloat(
+    val waveProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 9000, easing = LinearEasing),
+            animation = tween(durationMillis = 8000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "wave_scroll"
+        label = "wave_progress"
     )
 
     val floatingDrift by infiniteTransition.animateFloat(
-        initialValue = -30f,
-        targetValue = 30f,
+        initialValue = -25f,
+        targetValue = 25f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 5000, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 4500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "floating_drift"
     )
 
-    // Cached particle points representing major market assets
     val particles = remember {
         listOf(
-            FloatingParticle(0.12f, 0.18f, 1.25f, "$", 19f, 0.50f),
-            FloatingParticle(0.88f, 0.14f, 0.95f, "€", 17f, 0.45f),
-            FloatingParticle(0.72f, 0.42f, 1.45f, "₿", 23f, 0.55f),
-            FloatingParticle(0.22f, 0.62f, 1.05f, "¥", 18f, 0.40f),
-            FloatingParticle(0.85f, 0.72f, 1.35f, "£", 19f, 0.45f),
-            FloatingParticle(0.38f, 0.82f, 0.85f, "💎", 16f, 0.50f),
-            FloatingParticle(0.15f, 0.88f, 1.15f, "🪙", 17f, 0.45f),
-            FloatingParticle(0.58f, 0.28f, 0.75f, "₮", 20f, 0.48f)
+            FloatingParticle(0.12f, 0.15f, 1.4f, "$", 22f, 0.65f),
+            FloatingParticle(0.85f, 0.22f, 1.1f, "€", 19f, 0.60f),
+            FloatingParticle(0.75f, 0.40f, 1.6f, "₿", 26f, 0.70f),
+            FloatingParticle(0.18f, 0.55f, 1.2f, "¥", 20f, 0.55f),
+            FloatingParticle(0.88f, 0.68f, 1.5f, "£", 22f, 0.60f),
+            FloatingParticle(0.35f, 0.78f, 0.9f, "💎", 20f, 0.70f),
+            FloatingParticle(0.14f, 0.90f, 1.3f, "🪙", 22f, 0.65f),
+            FloatingParticle(0.60f, 0.30f, 0.8f, "₮", 24f, 0.68f),
+            FloatingParticle(0.45f, 0.60f, 1.35f, "📈", 18f, 0.60f),
+            FloatingParticle(0.80f, 0.85f, 1.1f, "⚡", 18f, 0.65f)
         )
     }
 
@@ -107,39 +108,44 @@ fun AnimatedFintechBackground(
                 val width = size.width
                 val height = size.height
 
-                // --- 1. Scroll-Reactive Parallax Aurora Orbs ---
-                // Parallax shift calculation based on user scroll offset
-                val parallaxY1 = -scrollOffset * 0.26f
-                val parallaxY2 = -scrollOffset * 0.42f
-                val parallaxY3 = -scrollOffset * 0.16f
-                val parallaxX1 = sin(scrollOffset * 0.0028f) * 36f
-                val parallaxX2 = -sin(scrollOffset * 0.0024f) * 44f
+                // Direct parallax translation tied to scroll
+                val scrollParallax1 = -scrollOffset * 0.38f
+                val scrollParallax2 = -scrollOffset * 0.24f
+                val scrollParallax3 = -scrollOffset * 0.48f
 
-                // Top-Right Cyan Glow Orb
-                val orb1X = width * (0.35f + 0.16f * cos(pulsePhase)) + parallaxX1
-                val baseOrb1Y = height * (0.22f + 0.10f * sin(pulsePhase * 0.8f)) + (parallaxY1 % (height * 1.6f))
-                val orb1Y = (baseOrb1Y % height + height) % height
-                val orb1Radius = width * 0.68f
+                // Horizontal subtle drift on scroll
+                val lateralDrift1 = sin(scrollOffset * 0.002f) * 45f
+                val lateralDrift2 = -sin(scrollOffset * 0.0018f) * 55f
 
-                // Mid-Left Fintech Gold Glow Orb
-                val orb2X = width * (0.78f + 0.14f * sin(pulsePhase * 0.9f)) + parallaxX2
-                val baseOrb2Y = height * (0.65f + 0.12f * cos(pulsePhase * 0.7f)) + (parallaxY2 % (height * 1.6f))
-                val orb2Y = (baseOrb2Y % height + height) % height
-                val orb2Radius = width * 0.72f
+                // --- 1. Vibrant Luminous Aurora Glow Orbs ---
+                // Orb 1: Neon Cyan Top-Right
+                val orb1X = width * 0.45f + cos(pulsePhase) * 40f + lateralDrift1
+                val orb1Y = height * 0.18f + sin(pulsePhase * 0.8f) * 30f + scrollParallax1
+                val orb1Radius = width * 0.60f
 
-                // Bottom Center Violet Glow Orb
-                val orb3X = width * (0.25f + 0.10f * sin(pulsePhase * 1.1f))
-                val baseOrb3Y = height * (0.82f + 0.08f * cos(pulsePhase * 0.9f)) + (parallaxY3 % (height * 1.6f))
-                val orb3Y = (baseOrb3Y % height + height) % height
-                val orb3Radius = width * 0.58f
+                // Orb 2: Luxury Fintech Gold Mid-Left
+                val orb2X = width * 0.70f + sin(pulsePhase * 0.9f) * 35f + lateralDrift2
+                val orb2Y = height * 0.52f + cos(pulsePhase * 0.7f) * 35f + scrollParallax2
+                val orb2Radius = width * 0.62f
+
+                // Orb 3: Cosmic Violet/Indigo Lower
+                val orb3X = width * 0.30f + sin(pulsePhase * 1.1f) * 30f
+                val orb3Y = height * 0.85f + cos(pulsePhase * 0.9f) * 25f + scrollParallax3
+                val orb3Radius = width * 0.55f
+
+                // Orb 4: Emerald Green Accent
+                val orb4X = width * 0.60f - cos(pulsePhase * 0.6f) * 30f
+                val orb4Y = height * 1.20f + scrollParallax1
+                val orb4Radius = width * 0.50f
 
                 if (isDarkTheme) {
-                    // Dark Theme: Radiant Deep Neon Fintech Aurora Glows
+                    // Dark theme: High-contrast glowing neon gradients
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFF00E5FF).copy(alpha = 0.10f),
-                                Color(0xFF00E676).copy(alpha = 0.05f),
+                                Color(0xFF00E5FF).copy(alpha = 0.24f),
+                                Color(0xFF00B0FF).copy(alpha = 0.12f),
+                                Color(0xFF00E676).copy(alpha = 0.04f),
                                 Color.Transparent
                             ),
                             center = Offset(orb1X, orb1Y),
@@ -152,8 +158,9 @@ fun AnimatedFintechBackground(
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFFFB800).copy(alpha = 0.08f),
-                                Color(0xFFB388FF).copy(alpha = 0.05f),
+                                Color(0xFFFFB800).copy(alpha = 0.22f),
+                                Color(0xFFFFD54F).copy(alpha = 0.10f),
+                                Color(0xFFFF2A55).copy(alpha = 0.03f),
                                 Color.Transparent
                             ),
                             center = Offset(orb2X, orb2Y),
@@ -166,8 +173,8 @@ fun AnimatedFintechBackground(
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFF7C4DFF).copy(alpha = 0.08f),
-                                Color(0xFF00E5FF).copy(alpha = 0.04f),
+                                Color(0xFF7C4DFF).copy(alpha = 0.20f),
+                                Color(0xFF00E5FF).copy(alpha = 0.08f),
                                 Color.Transparent
                             ),
                             center = Offset(orb3X, orb3Y),
@@ -176,13 +183,27 @@ fun AnimatedFintechBackground(
                         center = Offset(orb3X, orb3Y),
                         radius = orb3Radius
                     )
-                } else {
-                    // Light Theme: Soft Luminous Pastel Fintech Atmosphere
+
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFF00B0FF).copy(alpha = 0.11f),
-                                Color(0xFF00E676).copy(alpha = 0.06f),
+                                Color(0xFF00E676).copy(alpha = 0.18f),
+                                Color(0xFF00E5FF).copy(alpha = 0.06f),
+                                Color.Transparent
+                            ),
+                            center = Offset(orb4X, orb4Y),
+                            radius = orb4Radius
+                        ),
+                        center = Offset(orb4X, orb4Y),
+                        radius = orb4Radius
+                    )
+                } else {
+                    // Light theme: Rich modern pastel electric glows
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFF00B0FF).copy(alpha = 0.25f),
+                                Color(0xFF69F0AE).copy(alpha = 0.10f),
                                 Color.Transparent
                             ),
                             center = Offset(orb1X, orb1Y),
@@ -195,8 +216,8 @@ fun AnimatedFintechBackground(
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFFFB800).copy(alpha = 0.09f),
-                                Color(0xFF8B5CF6).copy(alpha = 0.05f),
+                                Color(0xFFFFB800).copy(alpha = 0.22f),
+                                Color(0xFF8B5CF6).copy(alpha = 0.09f),
                                 Color.Transparent
                             ),
                             center = Offset(orb2X, orb2Y),
@@ -209,7 +230,7 @@ fun AnimatedFintechBackground(
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFF6366F1).copy(alpha = 0.07f),
+                                Color(0xFF6366F1).copy(alpha = 0.18f),
                                 Color.Transparent
                             ),
                             center = Offset(orb3X, orb3Y),
@@ -220,52 +241,54 @@ fun AnimatedFintechBackground(
                     )
                 }
 
-                // --- 2. Scroll-Moving Ambient Market Waves ---
-                drawAnimatedMarketWave(
+                // --- 2. Live Neon Market Trend Waves (Active Scroll Movement) ---
+                drawFlowingTrendWave(
                     width = width,
                     height = height,
-                    progress = waveScroll + (scrollOffset * 0.0005f),
-                    scrollOffsetY = -scrollOffset * 0.32f,
-                    isDark = isDarkTheme
+                    progress = waveProgress + (scrollOffset * 0.0006f),
+                    offsetY = height * 0.35f + (-scrollOffset * 0.30f),
+                    color = if (isDarkTheme) Color(0xFF00E5FF).copy(alpha = 0.22f) else Color(0xFF00B0FF).copy(alpha = 0.25f),
+                    strokeWidthPx = 3.dp.toPx()
                 )
 
-                drawSecondaryMarketWave(
+                drawFlowingTrendWave(
                     width = width,
                     height = height,
-                    progress = (waveScroll * 1.35f) + (scrollOffset * 0.0008f),
-                    scrollOffsetY = -scrollOffset * 0.18f,
-                    isDark = isDarkTheme
+                    progress = (waveProgress * 1.3f) + (scrollOffset * 0.0009f),
+                    offsetY = height * 0.65f + (-scrollOffset * 0.42f),
+                    color = if (isDarkTheme) Color(0xFFFFB800).copy(alpha = 0.18f) else Color(0xFFFFB800).copy(alpha = 0.20f),
+                    strokeWidthPx = 2.dp.toPx()
                 )
 
-                // --- 3. Subtle Parallax Grid Lines ---
-                drawParallaxGrid(
+                // --- 3. Geometric Trading Grid Mesh (Moves with Scroll) ---
+                drawDynamicTradingGrid(
                     width = width,
                     height = height,
                     scrollOffset = scrollOffset,
                     isDark = isDarkTheme
                 )
 
-                // --- 4. Floating Currency Particles (3D Parallax Depth) ---
+                // --- 4. Floating Currency & Market Symbols (3D Depth Parallax) ---
                 val paint = android.graphics.Paint().apply {
                     isAntiAlias = true
                     textAlign = android.graphics.Paint.Align.CENTER
                 }
 
                 particles.forEach { p ->
-                    val posX = p.initialX * width + floatingDrift * (p.speed * 0.3f) + sin((scrollOffset + p.initialY * 600f) * 0.0025f) * 22f
-                    val scrollShift = scrollOffset * p.speed * 0.38f
-                    val rawY = (p.initialY * height - (pulsePhase * 25f * p.speed) - scrollShift)
-                    val posY = (rawY % height + height) % height
+                    val posX = p.initialX * width + floatingDrift * (p.speed * 0.4f)
+                    val scrollShift = scrollOffset * p.speed * 0.45f
+                    val rawY = (p.initialY * height - scrollShift)
+                    val posY = (rawY % (height * 1.5f) + (height * 1.5f)) % (height * 1.5f) - (height * 0.25f)
 
                     paint.textSize = p.size * density
                     paint.color = if (isDarkTheme) {
                         android.graphics.Color.argb(
-                            (p.alphaFactor * 48).toInt(),
+                            (p.alphaFactor * 90).toInt(),
                             255, 255, 255
                         )
                     } else {
                         android.graphics.Color.argb(
-                            (p.alphaFactor * 58).toInt(),
+                            (p.alphaFactor * 105).toInt(),
                             15, 23, 42
                         )
                     }
@@ -280,104 +303,73 @@ fun AnimatedFintechBackground(
             }
         }
 
-        // Screen content rendered on top
+        // Screen content seamlessly rendered above the moving background
         content()
     }
 }
 
-private fun DrawScope.drawAnimatedMarketWave(
+private fun DrawScope.drawFlowingTrendWave(
     width: Float,
     height: Float,
     progress: Float,
-    scrollOffsetY: Float,
-    isDark: Boolean
+    offsetY: Float,
+    color: Color,
+    strokeWidthPx: Float
 ) {
     val path = Path()
-    val rawBaseWaveY = height * 0.38f + scrollOffsetY
-    val baseWaveY = (rawBaseWaveY % height + height) % height
-    val waveAmp = 26f
-    val waveLength = width * 0.88f
+    val waveAmp = 34f
+    val waveLength = width * 0.80f
 
-    path.moveTo(0f, baseWaveY)
+    path.moveTo(0f, offsetY)
 
     var x = 0f
-    val step = 14f
+    val step = 12f
     while (x <= width) {
-        val y = baseWaveY + sin((x / waveLength + progress) * 6.28318f) * waveAmp
+        val y = offsetY + sin((x / waveLength + progress) * 6.28318f) * waveAmp
         path.lineTo(x, y)
         x += step
     }
 
-    val waveColor = if (isDark) {
-        Color(0xFF00E5FF).copy(alpha = 0.07f)
-    } else {
-        Color(0xFF00B0FF).copy(alpha = 0.08f)
-    }
-
     drawPath(
         path = path,
-        color = waveColor,
-        style = Stroke(width = 2.dp.toPx())
+        color = color,
+        style = Stroke(width = strokeWidthPx)
     )
 }
 
-private fun DrawScope.drawSecondaryMarketWave(
-    width: Float,
-    height: Float,
-    progress: Float,
-    scrollOffsetY: Float,
-    isDark: Boolean
-) {
-    val path = Path()
-    val rawBaseWaveY = height * 0.68f + scrollOffsetY
-    val baseWaveY = (rawBaseWaveY % height + height) % height
-    val waveAmp = 20f
-    val waveLength = width * 0.75f
-
-    path.moveTo(0f, baseWaveY)
-
-    var x = 0f
-    val step = 16f
-    while (x <= width) {
-        val y = baseWaveY + cos((x / waveLength + progress) * 6.28318f) * waveAmp
-        path.lineTo(x, y)
-        x += step
-    }
-
-    val waveColor = if (isDark) {
-        Color(0xFFFFB800).copy(alpha = 0.05f)
-    } else {
-        Color(0xFFFFB800).copy(alpha = 0.07f)
-    }
-
-    drawPath(
-        path = path,
-        color = waveColor,
-        style = Stroke(width = 1.5.dp.toPx())
-    )
-}
-
-private fun DrawScope.drawParallaxGrid(
+private fun DrawScope.drawDynamicTradingGrid(
     width: Float,
     height: Float,
     scrollOffset: Float,
     isDark: Boolean
 ) {
-    val gridSpacing = 64f
-    val lineAlpha = if (isDark) 0.035f else 0.045f
-    val lineColor = if (isDark) Color(0xFF00E5FF) else Color(0xFF00B0FF)
+    val spacing = 72f
+    val gridAlpha = if (isDark) 0.06f else 0.08f
+    val gridColor = if (isDark) Color(0xFF00E5FF) else Color(0xFF00B0FF)
 
-    val offsetY = -(scrollOffset * 0.25f) % gridSpacing
-    var y = offsetY
+    val scrollY = (-scrollOffset * 0.35f) % spacing
+    var y = scrollY
     while (y < height) {
         if (y >= 0) {
             drawLine(
-                color = lineColor.copy(alpha = lineAlpha),
+                color = gridColor.copy(alpha = gridAlpha),
                 start = Offset(0f, y),
                 end = Offset(width, y),
-                strokeWidth = 1f
+                strokeWidth = 1.dp.toPx()
             )
         }
-        y += gridSpacing
+        y += spacing
+    }
+
+    // Vertical subtle grid pillars
+    var x = spacing
+    while (x < width) {
+        drawLine(
+            color = gridColor.copy(alpha = gridAlpha * 0.6f),
+            start = Offset(x, 0f),
+            end = Offset(x, height),
+            strokeWidth = 1.dp.toPx()
+        )
+        x += spacing * 1.5f
     }
 }

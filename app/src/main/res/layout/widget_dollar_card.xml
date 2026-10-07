@@ -81,7 +81,7 @@
                 android:paddingRight="8dp"
                 android:paddingTop="3dp"
                 android:paddingBottom="3dp"
-                android:text="+۱.۴۵٪"
+                android:text="+۲.۱۴٪"
                 android:textColor="#00E676"
                 android:textSize="11.5sp"
                 android:textStyle="bold" />
@@ -93,7 +93,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="right|end"
-                android:text="۲۵۸,۴۶۵ تومان"
+                android:text="۲۶۳,۲۰۰ تومان"
                 android:textColor="#FFFFFF"
                 android:textSize="19sp"
                 android:textStyle="bold" />
@@ -116,7 +116,7 @@
                 android:id="@+id/dollar_widget_usdt"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="تتر: ۲۵۹,۰۰۰ ت"
+                android:text="تتر: ۲۶۴,۰۰۰ ت"
                 android:textColor="#00E5FF"
                 android:textSize="10.5sp" />
 
@@ -126,7 +126,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="right|end"
-                android:text="سقف: ۲۵۸,۵۲۰ | کف: ۲۵۴,۶۶۰"
+                android:text="سقف: ۲۶۸,۵۰۰ | کف: ۲۶۱,۶۰۰"
                 android:textColor="#A0ADC2"
                 android:textSize="10.5sp" />
         </LinearLayout>
