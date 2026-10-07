@@ -14,14 +14,15 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <!-- Refresh Button -->
-        <ImageButton
+        <!-- Refresh Button (Using compliant ImageView + PNG icon) -->
+        <ImageView
             android:id="@+id/widget_btn_refresh"
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            android:background="@android:color/transparent"
             android:contentDescription="بروزرسانی نرخ‌ها"
-            android:src="@drawable/ic_refresh" />
+            android:src="@drawable/ic_widget_refresh" />
 
         <!-- Timestamp -->
         <TextView
@@ -29,6 +30,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
             android:paddingStart="6dp"
             android:paddingEnd="6dp"
             android:text="بروزرسانی: لحظاتی پیش"
@@ -45,12 +48,14 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <View
+    <!-- Divider Line using ImageView (RemoteViews-compliant) -->
+    <ImageView
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:background="#262D3E" />
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="6dp"
+        android:background="#262D3E"
+        android:src="@android:color/transparent" />
 
     <!-- 4 Main Asset Rows -->
     <LinearLayout
@@ -69,8 +74,10 @@
             android:background="@drawable/widget_item_bg"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp">
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
 
             <TextView
                 android:id="@+id/widget_change_usd"
@@ -78,7 +85,7 @@
                 android:layout_height="wrap_content"
                 android:text="+۱.۲٪"
                 android:textColor="#00E676"
-                android:textSize="10.5sp"
+                android:textSize="10sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -86,11 +93,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
                 android:text="۹۴,۸۰۰ تومان"
                 android:textColor="#FFFFFF"
-                android:textSize="12sp"
+                android:textSize="11.5sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -98,7 +107,7 @@
                 android:layout_height="wrap_content"
                 android:text="💵 دلار آمریکا"
                 android:textColor="#E0E6ED"
-                android:textSize="11.5sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <!-- 2. Gold 18K -->
@@ -111,8 +120,10 @@
             android:background="@drawable/widget_item_bg"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp">
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
 
             <TextView
                 android:id="@+id/widget_change_gold"
@@ -120,7 +131,7 @@
                 android:layout_height="wrap_content"
                 android:text="+۰.۸٪"
                 android:textColor="#00E676"
-                android:textSize="10.5sp"
+                android:textSize="10sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -128,11 +139,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
                 android:text="۲۵,۶۹۴,۴۰۰ تومان"
                 android:textColor="#FFD700"
-                android:textSize="12sp"
+                android:textSize="11.5sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -140,7 +153,7 @@
                 android:layout_height="wrap_content"
                 android:text="🪙 طلای ۱۸ عیار"
                 android:textColor="#E0E6ED"
-                android:textSize="11.5sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <!-- 3. Emami Coin -->
@@ -153,8 +166,10 @@
             android:background="@drawable/widget_item_bg"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp">
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
 
             <TextView
                 android:id="@+id/widget_change_coin"
@@ -162,7 +177,7 @@
                 android:layout_height="wrap_content"
                 android:text="+۱.۵٪"
                 android:textColor="#00E676"
-                android:textSize="10.5sp"
+                android:textSize="10sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -170,11 +185,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
                 android:text="۳۰۴,۵۰۰,۰۰۰ تومان"
                 android:textColor="#FFFFFF"
-                android:textSize="12sp"
+                android:textSize="11.5sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -182,7 +199,7 @@
                 android:layout_height="wrap_content"
                 android:text="🪙 سکه امامی"
                 android:textColor="#E0E6ED"
-                android:textSize="11.5sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <!-- 4. Tether & Bitcoin -->
@@ -194,8 +211,10 @@
             android:background="@drawable/widget_item_bg"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp">
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
 
             <TextView
                 android:id="@+id/widget_change_crypto"
@@ -203,7 +222,7 @@
                 android:layout_height="wrap_content"
                 android:text="+۲.۱٪"
                 android:textColor="#00E676"
-                android:textSize="10.5sp"
+                android:textSize="10sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -211,11 +230,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
                 android:text="۹۵,۱۰۰ ت | $۸۵K"
                 android:textColor="#00E5FF"
-                android:textSize="12sp"
+                android:textSize="11.5sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -223,7 +244,7 @@
                 android:layout_height="wrap_content"
                 android:text="⚡ تتر و بیت‌کوین"
                 android:textColor="#E0E6ED"
-                android:textSize="11.5sp" />
+                android:textSize="11sp" />
         </LinearLayout>
     </LinearLayout>
 
